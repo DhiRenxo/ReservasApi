@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
+from models.seccion import Seccion
 
 class HorarioAcademico(Base):
     __tablename__ = "horarios"
@@ -11,9 +12,10 @@ class HorarioAcademico(Base):
     diasemana = Column(String(15))
     horainicio = Column(String(5))
     horafin = Column(String(5))
-    grupo = Column(String(50))
-    curso = Column(String(100))
-    docente = Column(String(100))
+    docenteid = Column(Integer, ForeignKey("docentes.id"))
+    seccionid = Column(Integer, ForeignKey("seccion.id"))
 
     ambiente = relationship("Ambiente")
-    curso = relationship("Cursos")
+    curso = relationship("Curso")
+    docente = relationship("Docente")
+    seccion = relationship("Seccion")                                                                                       

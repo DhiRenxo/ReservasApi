@@ -11,7 +11,10 @@ from models.aprobacion import AprobacionReserva
 from models.horario import HorarioAcademico
 from models.eventoespecial import EventoEspecial
 from models.bitacora import BitacoraReserva
-from models.cursos import curso
+from models.cursos import Curso
+from models.docente import Docente
+from models.carrera import Carrera
+from models.seccion import Seccion
 
 
 from sqlalchemy import engine_from_config, pool

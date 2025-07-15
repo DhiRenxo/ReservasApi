@@ -1,11 +1,18 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
+from models.carrera import Carrera
 
-class curso(Base):
+class Curso(Base):
     __tablename__ = "cursos"
 
     id = Column(Integer, primary_key=True)
-    codigo = Column(String(50))
+    codigo = Column(String(50), unique = True)
     nombre = Column(String(50))
-    docente = Column(String(50))
+    horas = Column(Integer)
+    ciclo = Column(String(50))
+    carreid = Column(Integer, ForeignKey("carrera.id"))
+
+    carrera = relationship("Carrera")
+
+    

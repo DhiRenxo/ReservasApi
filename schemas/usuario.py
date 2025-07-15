@@ -26,5 +26,6 @@ class UsuarioResponse(UsuarioBase):
     id: int
     fechacreacion: Optional[datetime]
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True  
+    }
