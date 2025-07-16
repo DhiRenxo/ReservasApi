@@ -9,6 +9,7 @@ class HorarioAcademico(Base):
     id = Column(Integer, primary_key=True)
     ambienteid = Column(Integer, ForeignKey("ambientes.id"))
     cursoid = Column(Integer,ForeignKey("cursos.id"))
+    horas = Column(Integer)
     diasemana = Column(String(15))
     horainicio = Column(String(5))
     horafin = Column(String(5))

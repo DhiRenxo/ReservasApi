@@ -9,7 +9,6 @@ class Curso(Base):
     id = Column(Integer, primary_key=True)
     codigo = Column(String(50), unique = True)
     nombre = Column(String(50))
-    horas = Column(Integer)
     ciclo = Column(String(50))
     carreid = Column(Integer, ForeignKey("carrera.id"))
 

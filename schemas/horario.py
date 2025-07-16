@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, validator
 from typing import Optional
 
 class HorarioAcademicoBase(BaseModel):
@@ -7,19 +7,17 @@ class HorarioAcademicoBase(BaseModel):
     docenteid: int = Field(..., gt=0)
     seccionid: int = Field(..., gt=0)
     diasemana: str = Field(..., max_length=15, description="Día de la semana (Lunes a Domingo)")
-    horainicio: str = Field(..., pattern=r"^\d{2}:\d{2}$", max_length=5, description="Hora de inicio HH:MM")
-    horafin: str = Field(..., pattern=r"^\d{2}:\d{2}$", max_length=5, description="Hora de fin HH:MM")
+    horainicio: str = Field(..., regex=r"^\d{2}:\d{2}$", max_length=5, description="Hora de inicio HH:MM")
+    horafin: str = Field(..., regex=r"^\d{2}:\d{2}$", max_length=5, description="Hora de fin HH:MM")
 
-    @field_validator("diasemana")
-    @classmethod
+    @validator("diasemana")
     def validar_diasemana(cls, v):
         dias_validos = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
         if v.capitalize() not in dias_validos:
             raise ValueError("El día debe estar entre Lunes y Domingo")
         return v.capitalize()
 
-    @field_validator("horafin")
-    @classmethod
+    @validator("horafin")
     def validar_horas(cls, fin, values):
         inicio = values.get("horainicio")
         if inicio and fin:
@@ -35,6 +33,5 @@ class HorarioAcademicoCreate(HorarioAcademicoBase):
 class HorarioAcademico(HorarioAcademicoBase):
     id: int
 
-    model_config = {
-        "from_attributes": True
-    }
+    class Config:
+        orm_mode = True
