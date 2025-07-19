@@ -26,6 +26,5 @@ class Reserva(ReservaBase):
     ambiente: Ambiente
     tipoevento: TipoEvento
 
-    model_config = {
-        "from_attributes": True  
-    }
+    class Config:
+        orm_mode = True

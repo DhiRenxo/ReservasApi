@@ -10,6 +10,5 @@ class TipoAmbienteCreate(TipoAmbienteBase):
 class TipoAmbienteResponse(TipoAmbienteBase):
     id: int
 
-    model_config = {
-        "from_attributes": True  
-    }
+    class Config:
+        orm_mode = True

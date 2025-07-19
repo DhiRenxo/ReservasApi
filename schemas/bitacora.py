@@ -14,6 +14,5 @@ class BitacoraReservaCreate(BitacoraReservaBase):
 class BitacoraReserva(BitacoraReservaBase):
     id: int
 
-    model_config = {
-        "from_attributes": True  
-    }
+    class Config:
+        orm_mode = True

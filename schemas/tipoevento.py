@@ -9,6 +9,5 @@ class TipoEventoCreate(TipoEventoBase):
 class TipoEvento(TipoEventoBase):
     id: int
 
-    model_config = {
-        "from_attributes": True  
-    }
+    class Config:
+        orm_mode = True

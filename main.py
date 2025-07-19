@@ -5,6 +5,7 @@ from app.database import Base, engine
 import os
 import sys
 
+
 # Routers
 from controllers.admin import ambienteadmin, tipoambiente, roladmin, usuarioadmin, cursoadmin, horarioadmin, docenteadmin
 from controllers import authcontroller,asignacioncontroller
@@ -16,9 +17,11 @@ load_dotenv(".env")
 app = FastAPI(title="Sistema de Reservas de Ambientes")
 
 # Middleware CORS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("BACKEND_CORS_ORIGINS", "*").split(","),
+    allow_origins=["http://localhost:4200"],  # Cambia este al puerto de Astro
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

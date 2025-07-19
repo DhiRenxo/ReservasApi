@@ -40,6 +40,5 @@ class AsignacionResponse(AsignacionBase):
     fecha_asignacion: datetime
     fecha_modificada: datetime
 
-    model_config = {
-        "from_attributes": True  
-    }
+    class Config:
+        orm_mode = True

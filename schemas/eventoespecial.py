@@ -16,6 +16,5 @@ class EventoEspecialCreate(EventoEspecialBase):
 class EventoEspecial(EventoEspecialBase):
     id: int
 
-    model_config = {
-        "from_attributes": True  
-    }
+    class Config:
+        orm_mode = True

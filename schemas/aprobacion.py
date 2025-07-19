@@ -15,6 +15,5 @@ class AprobacionReservaCreate(AprobacionReservaBase):
 class AprobacionReserva(AprobacionReservaBase):
     id: int
 
-    model_config = {
-        "from_attributes": True  
-    }
+    class Config:
+        orm_mode = True

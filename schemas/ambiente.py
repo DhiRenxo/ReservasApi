@@ -20,6 +20,5 @@ class AmbienteResponse(AmbienteBase):
     id: int
     tipo_ambiente: TipoAmbienteResponse 
 
-    model_config = {
-        "from_attributes": True  
-    }
+    class Config:
+        orm_mode = True
