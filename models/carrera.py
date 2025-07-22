@@ -8,5 +8,7 @@ class Carrera(Base):
     id=Column(Integer, primary_key=True, index=True)
     nombre= Column(String(50))
     nomenglatura= Column(String(1), unique=True)
+    status = Column(Boolean, nullable=False, default=True)
+
     
     
