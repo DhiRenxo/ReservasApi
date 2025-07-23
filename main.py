@@ -7,7 +7,7 @@ import sys
 
 
 # Routers
-from controllers.admin import ambienteadmin, tipoambiente, roladmin, usuarioadmin, cursoadmin, horarioadmin, docenteadmin, carreraadmin
+from controllers.admin import ambienteadmin, tipoambiente, roladmin, usuarioadmin, cursoadmin, horarioadmin, docenteadmin, carreraadmin, seccionadmin
 from controllers import authcontroller,asignacioncontroller
 # Aquí puedes agregar más routers si tienes
 
@@ -37,6 +37,7 @@ app.include_router(horarioadmin.router)
 app.include_router(docenteadmin.router)
 app.include_router(asignacioncontroller.router)
 app.include_router(carreraadmin.router)
+app.include_router(seccionadmin.router)
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

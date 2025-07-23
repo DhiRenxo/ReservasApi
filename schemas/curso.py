@@ -5,6 +5,7 @@ class CursoBase(BaseModel):
     nombre: str
     horas: int
     ciclo: str
+    plan: str
     carreid: int
 
 class CursoCreate(CursoBase):
@@ -15,6 +16,7 @@ class CursoUpdate(CursoBase):
 
 class CursoResponse(CursoBase):
     id: int
+    estado: bool
 
     class Config:
         orm_mode = True

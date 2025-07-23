@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 from models.carrera import Carrera
@@ -9,8 +9,11 @@ class Curso(Base):
     id = Column(Integer, primary_key=True)
     codigo = Column(String(50), unique = True)
     nombre = Column(String(50))
+    horas = Column(Integer)
     ciclo = Column(String(50))
+    plan = Column(String(10))
     carreid = Column(Integer, ForeignKey("carrera.id"))
+    estado = Column(Boolean, default=True)
 
     carrera = relationship("Carrera")
 
