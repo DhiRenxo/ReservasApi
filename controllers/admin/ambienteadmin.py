@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from services import ambienteservice
-from schemas.ambiente import AmbienteCreate, AmbienteResponse, AmbienteUpdate
+from schemas.ambiente import AmbienteCreate, AmbienteResponse, AmbienteUpdate, AmbienteEstado
 from utils.google_auth import get_current_user  
 
 router = APIRouter(prefix="/api/ambientes", tags=["Ambientes"])
@@ -52,3 +52,8 @@ def eliminar_ambiente(
     if not eliminado:
         raise HTTPException(status_code=404, detail="Ambiente no encontrado")
     return {"mensaje": "Ambiente eliminado correctamente"}
+
+
+@router.patch("/estado/{id}", response_model=AmbienteEstado)
+def cambiar_estado(id: int, estado_obj: AmbienteEstado, db: Session = Depends(get_db), dict = Depends(get_current_user)):
+    return ambienteservice.actualizar_estado_seccion(db, id, estado_obj.estado)

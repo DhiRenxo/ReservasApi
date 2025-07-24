@@ -16,6 +16,9 @@ class AmbienteCreate(AmbienteBase):
 class AmbienteUpdate(AmbienteBase):
     pass
 
+class AmbienteEstado(BaseModel):
+    estado: bool
+
 class AmbienteResponse(AmbienteBase):
     id: int
     tipo_ambiente: TipoAmbienteResponse 
