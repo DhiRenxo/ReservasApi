@@ -62,3 +62,14 @@ def delete(db: Session, id: int):
     db.delete(ambiente)
     db.commit()
     return ambiente
+
+
+def actualizar_estado_ambiente(db: Session, id: int, nuevo_estado: bool):
+    db_ambiente = db.query(Ambiente).filter(Ambiente.id == id).first()
+    if not db_ambiente:
+        return None
+
+    db_ambiente.activo = nuevo_estado
+    db.commit()
+    db.refresh(db_ambiente)
+    return db_ambiente
