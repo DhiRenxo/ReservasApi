@@ -8,6 +8,7 @@ def get_all(db: Session):
 def get_by_id(db: Session, id: int):
     return db.query(Rol).filter(Rol.id == id).first()
 
+
 def create(db: Session, data: RolCreate):
     nuevo = Rol(nombre=data.nombre)
     db.add(nuevo)
