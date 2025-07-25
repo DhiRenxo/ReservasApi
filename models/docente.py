@@ -14,7 +14,7 @@ class Docente(Base):
     tipocontrato = Column(String(50), nullable = False)
     horassemanal = Column(Integer, nullable = False)
     horasactual = Column(Integer, nullable= True)
-    horastemporales = Column(Integer, nullable=True)
+    horastemporales = Column(Integer, nullable=True)  
     horastotales =Column(Integer, nullable=True)
     horasdejara = Column(Integer, nullable=True)
     observaciones = Column(String, nullable=True)
