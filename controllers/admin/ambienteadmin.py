@@ -55,5 +55,5 @@ def eliminar_ambiente(
 
 
 @router.patch("/estado/{id}", response_model=AmbienteEstado)
-def cambiar_estado(id: int, estado_obj: AmbienteEstado, db: Session = Depends(get_db), dict = Depends(get_current_user)):
-    return ambienteservice.actualizar_estado_seccion(db, id, estado_obj.estado)
+def cambiar_estado(id: int, estado_obj: AmbienteEstado, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
+    return ambienteservice.actualizar_estado_ambiente(db, id, estado_obj.estado)

@@ -1,44 +1,33 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
-
 class AsignacionBase(BaseModel):
-    docenteid: int
-    cursoid: int
     carreraid: int
+    plan: str
     ciclo: str
     cantidad_secciones: int
     secciones_asignadas: int
-    horas_curso: int
-    horas_actuales: int
-    horas_dejara: Optional[int] = None
-    horas_totales: Optional[int] = None
-    observaciones: Optional[str] = None
-
+    estado: Optional[bool] = True
 
 class AsignacionCreate(AsignacionBase):
-    pass
+    curso_ids: List[int]
+    docente_ids: Optional[List[int]] = None  
 
+class AsignacionUpdate(AsignacionBase):
+    curso_ids: Optional[List[int]] = None  
+    docente_ids: Optional[List[int]] = None
 
-class AsignacionUpdate(BaseModel):
-    cantidad_secciones: Optional[int]
-    secciones_asignadas: Optional[int]
-    horas_curso: Optional[int]
-    horas_actuales: Optional[int]
-    horas_dejara: Optional[int]
-    horas_totales: Optional[int]
-    observaciones: Optional[str]
+class AsignacionEstadoUpdate(BaseModel):
+    estado: bool
 
-    model_config = {
-        "from_attributes": True  
-    }
+class AsignacionDelete(BaseModel):
+    id: int
 
-
-class AsignacionResponse(AsignacionBase):
+class AsignacionSchema(AsignacionBase):
     id: int
     fecha_asignacion: datetime
-    fecha_modificada: datetime
+    fecha_modificada: Optional[datetime]
 
     class Config:
         orm_mode = True

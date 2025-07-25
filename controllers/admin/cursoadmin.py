@@ -60,3 +60,20 @@ def actualizar_horas(curso_id: int, horas: int, db: Session = Depends(get_db), u
     db.commit()
     db.refresh(curso)
     return curso
+
+@router.get("/filtro", response_model=list[CursoResponse])
+def cursos_por_filtros(
+    carreid: int,
+    plan: str,
+    ciclo: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user)
+):
+    cursos = db.query(Curso).filter(
+        Curso.carreid == carreid,
+        Curso.plan == plan,
+        Curso.ciclo == ciclo,
+        Curso.estado == True
+    ).all()
+
+    return cursos

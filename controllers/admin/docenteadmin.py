@@ -4,7 +4,7 @@ from app.database import get_db
 import services.docenteservice as docente_service
 from schemas.docente import DocenteCreate, DocenteUpdate, DocenteOut
 from typing import List
-from utils.google_auth import get_current_user
+from utils.google_auth import get_current_user  # Tu autenticación JWT/Google
 
 router = APIRouter(
     prefix="/api/docentes",

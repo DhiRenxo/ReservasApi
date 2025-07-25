@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 class CursoBase(BaseModel):
     codigo: str = Field(..., max_length=50)
@@ -7,6 +8,7 @@ class CursoBase(BaseModel):
     ciclo: str
     plan: str
     carreid: int
+    horasasignadas: Optional[str] = None
 
 class CursoCreate(CursoBase):
     pass

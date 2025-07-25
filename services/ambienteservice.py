@@ -67,9 +67,8 @@ def delete(db: Session, id: int):
 def actualizar_estado_ambiente(db: Session, id: int, nuevo_estado: bool):
     db_ambiente = db.query(Ambiente).filter(Ambiente.id == id).first()
     if not db_ambiente:
-        return None
+        raise HTTPException(status_code=404, detail="Ambiente no encontrado")
 
     db_ambiente.activo = nuevo_estado
     db.commit()
-    db.refresh(db_ambiente)
-    return db_ambiente
+    return {"estado": db_ambiente.activo}

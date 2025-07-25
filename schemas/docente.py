@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 class DocenteBase(BaseModel):
     nombre: str
@@ -6,7 +7,11 @@ class DocenteBase(BaseModel):
     estado: bool = True
     tipocontrato: str
     horassemanal: int
-    horasactual: int = 0  
+    horasactual: Optional[int] = None
+    horastemporales: Optional[int] = None
+    horastotales: Optional[int] = None
+    horasdejara: Optional[int] = None
+    observaciones: Optional[str] = None
 
 class DocenteCreate(DocenteBase):
     pass
