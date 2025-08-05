@@ -15,6 +15,24 @@ def list_cursos(db: Session = Depends(get_db), user: dict = Depends(get_current_
 def list_activos(db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
     return db.query(Curso).filter(Curso.estado == True).all()
 
+@router.get("/filtro", response_model=list[CursoResponse])
+def cursos_por_filtros(
+    carreid: int,
+    plan: str,
+    ciclo: str,
+    db: Session = Depends(get_db), 
+    user: dict = Depends(get_current_user)
+):
+    cursos = db.query(Curso).filter(
+        Curso.carreid == carreid,
+        Curso.plan == plan,
+        Curso.ciclo == ciclo,
+        Curso.estado == True
+    ).all()
+
+    return cursos
+
+
 @router.get("/{curso_id}", response_model=CursoResponse)
 def get_curso(curso_id: int, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
     curso = db.query(Curso).filter(Curso.id == curso_id).first()
@@ -61,19 +79,3 @@ def actualizar_horas(curso_id: int, horas: int, db: Session = Depends(get_db), u
     db.refresh(curso)
     return curso
 
-@router.get("/filtro", response_model=list[CursoResponse])
-def cursos_por_filtros(
-    carreid: int,
-    plan: str,
-    ciclo: str,
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user)
-):
-    cursos = db.query(Curso).filter(
-        Curso.carreid == carreid,
-        Curso.plan == plan,
-        Curso.ciclo == ciclo,
-        Curso.estado == True
-    ).all()
-
-    return cursos
