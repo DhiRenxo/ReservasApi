@@ -9,6 +9,7 @@ class SeccionBase(BaseModel):
     letra: str
     turno: str
     serie: int
+    modalidad: str
     fecha_creacion: Optional[date] = None
     fecha_inicio: Optional[date] = None
     fecha_fin: Optional[date] = None
@@ -21,6 +22,7 @@ class SeccionUpdate(SeccionBase):
     pass
 
 class SeccionEstado(BaseModel):
+    modalidad: str
     estado: bool
 
 class Seccion(BaseModel):
@@ -31,6 +33,7 @@ class Seccion(BaseModel):
     letra: str
     turno: str
     serie: int
+    modalidad: str
     fecha_creacion: Optional[date]
     fecha_inicio: Optional[date]
     fecha_fin: Optional[date]

@@ -20,6 +20,7 @@ class AsignacionDocenteTemporal(Base):
     __tablename__ = 'asignaciones'
 
     id = Column(Integer, primary_key=True, index=True)
+    modalidad = Column(String(20))
     carreraid = Column(Integer)
     plan = Column(String)
     ciclo = Column(String)

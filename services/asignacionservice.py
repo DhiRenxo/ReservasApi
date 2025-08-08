@@ -13,6 +13,7 @@ from schemas.asignacion import (
 def crear_asignacion(db: Session, asignacion: AsignacionCreate):
     nueva_asignacion = AsignacionDocenteTemporal(
         carreraid=asignacion.carreraid,
+        modalidad=asignacion.modalidad,
         plan=asignacion.plan,
         ciclo=asignacion.ciclo,
         cantidad_secciones=asignacion.cantidad_secciones,

@@ -22,6 +22,7 @@ router = APIRouter(prefix="/asignaciones", tags=["Asignaciones"])
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def crear(asignacion: AsignacionCreate, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
+    print("📩 Datos recibidos del frontend:", asignacion.dict())
     return crear_asignacion(db, asignacion)
 
 @router.get("/")

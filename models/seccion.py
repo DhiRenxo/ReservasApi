@@ -13,6 +13,7 @@ class Seccion(Base):
     letra = Column(String(1))
     turno = Column(String(1))
     serie = Column(Integer)
+    modalidad = Column(String(20))
     fecha_creacion = Column(Date)
     fecha_inicio = Column(Date)
     fecha_fin = Column(Date)

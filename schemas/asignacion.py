@@ -6,6 +6,7 @@ class AsignacionBase(BaseModel):
     carreraid: int
     plan: str
     ciclo: str
+    modalidad: str
     cantidad_secciones: int
     secciones_asignadas: int
     estado: Optional[bool] = True
