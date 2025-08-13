@@ -6,8 +6,11 @@ from schemas.asignacion import (
     AsignacionCreate,
     AsignacionUpdate,
     AsignacionEstadoUpdate,
-    AsignacionDelete
+    AsignacionDelete,
+    AsignacionCantidadUpdate
 )
+from datetime import datetime
+
 
 # Crear asignación
 def crear_asignacion(db: Session, asignacion: AsignacionCreate):
@@ -18,14 +21,13 @@ def crear_asignacion(db: Session, asignacion: AsignacionCreate):
         ciclo=asignacion.ciclo,
         cantidad_secciones=asignacion.cantidad_secciones,
         secciones_asignadas=asignacion.secciones_asignadas,
+        fecha_inicio=asignacion.fecha_inicio,
         estado=asignacion.estado
     )
 
-    # Asociar cursos
     cursos = db.query(Curso).filter(Curso.id.in_(asignacion.curso_ids)).all()
     nueva_asignacion.cursos = cursos
 
-    # Asociar docentes si existen
     if asignacion.docente_ids:
         docentes = db.query(Docente).filter(Docente.id.in_(asignacion.docente_ids)).all()
         nueva_asignacion.docentes = docentes
@@ -34,6 +36,7 @@ def crear_asignacion(db: Session, asignacion: AsignacionCreate):
     db.commit()
     db.refresh(nueva_asignacion)
     return nueva_asignacion
+
 
 # Obtener todas las asignaciones
 def obtener_asignaciones(db: Session):
@@ -89,4 +92,17 @@ def eliminar_asignacion(db: Session, delete_data: AsignacionDelete):
 
     asignacion.estado = False
     db.commit()
+    return asignacion
+
+def actualizar_cantidad_secciones(db: Session, asignacion_id: int, data: AsignacionCantidadUpdate):
+    asignacion = db.query(AsignacionDocenteTemporal).filter(AsignacionDocenteTemporal.id == asignacion_id).first()
+    
+    if not asignacion:
+        return None  
+
+    asignacion.cantidad_secciones = data.cantidad_secciones
+    asignacion.fecha_modificada = datetime.utcnow()
+    db.commit()
+    db.refresh(asignacion)
+    
     return asignacion

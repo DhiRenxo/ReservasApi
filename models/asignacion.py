@@ -29,6 +29,7 @@ class AsignacionDocenteTemporal(Base):
     estado = Column(Boolean, default=True)
     fecha_asignacion = Column(DateTime, default=datetime.utcnow)
     fecha_modificada = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    fecha_inicio = Column(DateTime)
 
     cursos = relationship("Curso", secondary=asignacion_curso, back_populates="asignaciones")
     docentes = relationship("Docente", secondary=asignacion_docente, back_populates="asignaciones")

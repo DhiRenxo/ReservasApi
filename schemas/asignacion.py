@@ -9,6 +9,7 @@ class AsignacionBase(BaseModel):
     modalidad: str
     cantidad_secciones: int
     secciones_asignadas: int
+    fecha_inicio: datetime
     estado: Optional[bool] = True
 
 class AsignacionCreate(AsignacionBase):
@@ -29,6 +30,9 @@ class AsignacionSchema(AsignacionBase):
     id: int
     fecha_asignacion: datetime
     fecha_modificada: Optional[datetime]
+
+class AsignacionCantidadUpdate(BaseModel):
+    cantidad_secciones: int
 
     class Config:
         orm_mode = True

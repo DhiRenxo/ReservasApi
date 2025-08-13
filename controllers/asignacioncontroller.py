@@ -7,13 +7,15 @@ from services.asignacionservice import (
     obtener_asignacion_por_id,
     actualizar_asignacion,
     actualizar_estado_asignacion,
-    eliminar_asignacion
+    eliminar_asignacion,
+    actualizar_cantidad_secciones
 )
 from schemas.asignacion import (
     AsignacionCreate,
     AsignacionUpdate,
     AsignacionEstadoUpdate,
-    AsignacionDelete
+    AsignacionDelete,
+    AsignacionCantidadUpdate
 )
 
 from utils.google_auth import get_current_user
@@ -22,7 +24,6 @@ router = APIRouter(prefix="/asignaciones", tags=["Asignaciones"])
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def crear(asignacion: AsignacionCreate, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    print("📩 Datos recibidos del frontend:", asignacion.dict())
     return crear_asignacion(db, asignacion)
 
 @router.get("/")
@@ -56,3 +57,12 @@ def eliminar(delete_data: AsignacionDelete, db: Session = Depends(get_db),  user
     if not asignacion:
         raise HTTPException(status_code=404, detail="Asignación no encontrada")
     return {"mensaje": "Asignación desactivada correctamente"}
+
+@router.patch("/{asignacion_id}/cantidad-secciones")
+def actualizar_cantidad(asignacion_id: int, data: AsignacionCantidadUpdate, db: Session = Depends(get_db), user:dict = Depends(get_current_user)):
+    asignacion = actualizar_cantidad_secciones(db, asignacion_id, data)
+    
+    if not asignacion:
+        raise HTTPException(status_code=404, detail="Asignación no encontrada")
+    
+    return asignacion

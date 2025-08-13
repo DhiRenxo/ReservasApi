@@ -9,7 +9,7 @@ class SeccionBase(BaseModel):
     letra: str
     turno: str
     serie: int
-    modalidad: str
+    modalidad: Optional[str] = None
     fecha_creacion: Optional[date] = None
     fecha_inicio: Optional[date] = None
     fecha_fin: Optional[date] = None
@@ -33,7 +33,7 @@ class Seccion(BaseModel):
     letra: str
     turno: str
     serie: int
-    modalidad: str
+    modalidad: Optional[str] = None
     fecha_creacion: Optional[date]
     fecha_inicio: Optional[date]
     fecha_fin: Optional[date]
