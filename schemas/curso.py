@@ -3,6 +3,7 @@ from typing import Optional
 
 class CursoBase(BaseModel):
     codigo: str = Field(..., max_length=50)
+    modalidad: str 
     nombre: str
     horas: int
     ciclo: str

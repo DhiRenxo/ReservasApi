@@ -43,10 +43,12 @@ def update_horas(db: Session, curso_id: int, horas: int):
         db.refresh(curso)
     return curso
 
-def get_by_carrera_plan_ciclo(db: Session, carreid: int, plan: str, ciclo: str):
+def get_by_carrera_plan_ciclo(db: Session, carreid: int, plan: str, ciclo: str, modalidad: str):
     return db.query(Curso).filter(
         Curso.carreid == carreid,
         Curso.plan == plan,
         Curso.ciclo == ciclo,
+        Curso.modalidad == modalidad,
         Curso.estado == True
     ).all()
+

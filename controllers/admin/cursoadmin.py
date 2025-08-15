@@ -4,6 +4,8 @@ from app.database import get_db
 from schemas.curso import CursoCreate, CursoUpdate, CursoResponse
 from models.cursos import Curso
 from utils.google_auth import get_current_user
+from typing import List
+
 
 router = APIRouter(prefix="/cursos", tags=["Cursos"])
 
@@ -20,13 +22,14 @@ def cursos_por_filtros(
     carreid: int,
     plan: str,
     ciclo: str,
-    db: Session = Depends(get_db), 
-    user: dict = Depends(get_current_user)
+    modalidad: str,
+    db: Session = Depends(get_db)
 ):
     cursos = db.query(Curso).filter(
         Curso.carreid == carreid,
         Curso.plan == plan,
         Curso.ciclo == ciclo,
+        Curso.modalidad == modalidad,
         Curso.estado == True
     ).all()
 
@@ -79,3 +82,14 @@ def actualizar_horas(curso_id: int, horas: int, db: Session = Depends(get_db), u
     db.refresh(curso)
     return curso
 
+@router.post("/bulk", response_model=list[CursoResponse])
+def create_cursos_bulk(
+    cursos: List[CursoCreate],
+    db: Session = Depends(get_db)
+):
+    db_cursos = [Curso(**curso.dict()) for curso in cursos]
+    db.add_all(db_cursos)
+    db.commit()
+    for curso in db_cursos:
+        db.refresh(curso)
+    return db_cursos

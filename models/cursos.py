@@ -9,7 +9,8 @@ class Curso(Base):
 
     id = Column(Integer, primary_key=True)
     codigo = Column(String(50), unique = True)
-    nombre = Column(String(50))
+    modalidad = Column(String(30))
+    nombre = Column(String(500))
     horas = Column(Integer)
     ciclo = Column(String(50))
     plan = Column(String(10))
