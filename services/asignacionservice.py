@@ -1,108 +1,114 @@
+# services/asignacion.py
 from sqlalchemy.orm import Session
-from models.asignacion import AsignacionDocenteTemporal
-from models.cursos import Curso
-from models.docente import Docente
+from datetime import datetime
+from models.asignacion import Asignacion
+from models.AsignacionCursoDocente import AsignacionCursoDocente
 from schemas.asignacion import (
     AsignacionCreate,
     AsignacionUpdate,
-    AsignacionEstadoUpdate,
-    AsignacionDelete,
-    AsignacionCantidadUpdate
+    AsignacionUpdateSecciones,
+    AsignacionCursoDocenteCreate
 )
-from datetime import datetime
 
+# -----------------------------
+# CRUD Asignacion
+# -----------------------------
 
-# Crear asignación
-def crear_asignacion(db: Session, asignacion: AsignacionCreate):
-    nueva_asignacion = AsignacionDocenteTemporal(
+def create_asignacion(db: Session, asignacion: AsignacionCreate):
+    db_asignacion = Asignacion(
         carreraid=asignacion.carreraid,
-        modalidad=asignacion.modalidad,
         plan=asignacion.plan,
         ciclo=asignacion.ciclo,
+        modalidad=asignacion.modalidad,
         cantidad_secciones=asignacion.cantidad_secciones,
         secciones_asignadas=asignacion.secciones_asignadas,
+        estado=asignacion.estado,
         fecha_inicio=asignacion.fecha_inicio,
-        estado=asignacion.estado
+        fecha_asignacion=datetime.utcnow()
+    )
+    db.add(db_asignacion)
+    db.commit()
+    db.refresh(db_asignacion)
+    return db_asignacion
+
+
+def get_asignaciones(db: Session, skip: int = 0, limit: int = 10):
+    return (
+        db.query(Asignacion)
+        .order_by(Asignacion.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
     )
 
-    cursos = db.query(Curso).filter(Curso.id.in_(asignacion.curso_ids)).all()
-    nueva_asignacion.cursos = cursos
 
-    if asignacion.docente_ids:
-        docentes = db.query(Docente).filter(Docente.id.in_(asignacion.docente_ids)).all()
-        nueva_asignacion.docentes = docentes
-
-    db.add(nueva_asignacion)
-    db.commit()
-    db.refresh(nueva_asignacion)
-    return nueva_asignacion
+def get_asignacion(db: Session, asignacion_id: int):
+    return db.query(Asignacion).filter(Asignacion.id == asignacion_id).first()
 
 
-# Obtener todas las asignaciones
-def obtener_asignaciones(db: Session):
-    return db.query(AsignacionDocenteTemporal).all()
-
-# Obtener por ID
-def obtener_asignacion_por_id(db: Session, asignacion_id: int):
-    return db.query(AsignacionDocenteTemporal).filter(AsignacionDocenteTemporal.id == asignacion_id).first()
-
-# Actualizar asignación completa
-def actualizar_asignacion(db: Session, asignacion_id: int, datos: AsignacionUpdate):
-    asignacion = obtener_asignacion_por_id(db, asignacion_id)
-    if not asignacion:
+def update_asignacion(db: Session, asignacion_id: int, asignacion: AsignacionUpdate):
+    db_asignacion = get_asignacion(db, asignacion_id)
+    if not db_asignacion:
         return None
 
-    asignacion.carreraid = datos.carreraid
-    asignacion.plan = datos.plan
-    asignacion.ciclo = datos.ciclo
-    asignacion.cantidad_secciones = datos.cantidad_secciones
-    asignacion.secciones_asignadas = datos.secciones_asignadas
-    asignacion.estado = datos.estado
+    for field, value in asignacion.dict(exclude_unset=True).items():
+        setattr(db_asignacion, field, value)
 
-    # Actualizar cursos
-    if datos.curso_ids:
-        cursos = db.query(Curso).filter(Curso.id.in_(datos.curso_ids)).all()
-        asignacion.cursos = cursos
-
-    # Actualizar docentes si se pasan
-    if datos.docente_ids is not None:
-        docentes = db.query(Docente).filter(Docente.id.in_(datos.docente_ids)).all()
-        asignacion.docentes = docentes
-
+    db_asignacion.fecha_modificada = datetime.utcnow()
     db.commit()
-    db.refresh(asignacion)
-    return asignacion
+    db.refresh(db_asignacion)
+    return db_asignacion
 
-# Cambiar solo el estado
-def actualizar_estado_asignacion(db: Session, asignacion_id: int, estado_data: AsignacionEstadoUpdate):
-    asignacion = obtener_asignacion_por_id(db, asignacion_id)
-    if not asignacion:
+
+def update_asignacion_secciones(db: Session, asignacion_id: int, update: AsignacionUpdateSecciones):
+    db_asignacion = get_asignacion(db, asignacion_id)
+    if not db_asignacion:
         return None
 
-    asignacion.estado = estado_data.estado
-    db.commit()
-    db.refresh(asignacion)
-    return asignacion
+    db_asignacion.cantidad_secciones = update.cantidad_secciones
+    db_asignacion.fecha_modificada = datetime.utcnow()
 
-# Eliminar (soft delete)
-def eliminar_asignacion(db: Session, delete_data: AsignacionDelete):
-    asignacion = obtener_asignacion_por_id(db, delete_data.id)
+    db.commit()
+    db.refresh(db_asignacion)
+    return db_asignacion
+
+
+def delete_asignacion(db: Session, asignacion_id: int):
+    db_asignacion = get_asignacion(db, asignacion_id)
+    if not db_asignacion:
+        return None
+    db.delete(db_asignacion)
+    db.commit()
+    return db_asignacion
+
+
+# -----------------------------
+# Relación Asignacion - Curso - Docente
+# -----------------------------
+
+def add_asignacion_curso_docente(db: Session, relacion: AsignacionCursoDocenteCreate):
+    db_relacion = AsignacionCursoDocente(
+        asignacion_id=relacion.asignacion_id,
+        curso_id=relacion.curso_id,
+        docente_id=relacion.docente_id
+    )
+    db.add(db_relacion)
+    db.commit()
+    db.refresh(db_relacion)
+    return db_relacion
+
+
+def get_asignacion_curso_docentes(db: Session, asignacion_id: int):
+    return db.query(AsignacionCursoDocente).filter(
+        AsignacionCursoDocente.asignacion_id == asignacion_id
+    ).all()
+
+
+def update_asignacion_estado(db: Session, asignacion_id: int, estado: bool):
+    asignacion = db.query(Asignacion).filter(Asignacion.id == asignacion_id).first()
     if not asignacion:
         return None
-
-    asignacion.estado = False
-    db.commit()
-    return asignacion
-
-def actualizar_cantidad_secciones(db: Session, asignacion_id: int, data: AsignacionCantidadUpdate):
-    asignacion = db.query(AsignacionDocenteTemporal).filter(AsignacionDocenteTemporal.id == asignacion_id).first()
-    
-    if not asignacion:
-        return None  
-
-    asignacion.cantidad_secciones = data.cantidad_secciones
-    asignacion.fecha_modificada = datetime.utcnow()
+    asignacion.estado = estado
     db.commit()
     db.refresh(asignacion)
-    
     return asignacion

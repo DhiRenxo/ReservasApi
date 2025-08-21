@@ -1,38 +1,61 @@
+# schemas/asignacion.py
 from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
+from typing import Optional, List
 
+# -------- Asignación Base --------
 class AsignacionBase(BaseModel):
     carreraid: int
     plan: str
     ciclo: str
-    modalidad: str
-    cantidad_secciones: int
-    secciones_asignadas: int
-    fecha_inicio: datetime
+    modalidad: Optional[str] = None
+    cantidad_secciones: int = 1
+    secciones_asignadas: Optional[int] = None
     estado: Optional[bool] = True
+    fecha_inicio: Optional[datetime] = None
 
+# -------- Crear Asignación --------
 class AsignacionCreate(AsignacionBase):
-    curso_ids: List[int]
-    docente_ids: Optional[List[int]] = None  
+    pass
 
-class AsignacionUpdate(AsignacionBase):
-    curso_ids: Optional[List[int]] = None  
-    docente_ids: Optional[List[int]] = None
+# -------- Actualizar Asignación --------
+class AsignacionUpdate(BaseModel):
+    plan: Optional[str] = None
+    ciclo: Optional[str] = None
+    modalidad: Optional[str] = None
+    cantidad_secciones: Optional[int] = None
+    secciones_asignadas: Optional[int] = None
+    estado: Optional[bool] = None
+    fecha_inicio: Optional[datetime] = None
 
-class AsignacionEstadoUpdate(BaseModel):
+class AsignacionUpdateSecciones(BaseModel):
+    cantidad_secciones: int
+
+class AsignacionUpdateEstado(BaseModel):
     estado: bool
 
-class AsignacionDelete(BaseModel):
-    id: int
 
-class AsignacionSchema(AsignacionBase):
+
+# -------- Response --------
+class AsignacionResponse(AsignacionBase):
     id: int
     fecha_asignacion: datetime
-    fecha_modificada: Optional[datetime]
+    fecha_modificada: datetime
 
-class AsignacionCantidadUpdate(BaseModel):
-    cantidad_secciones: int
+    class Config:
+        orm_mode = True
 
+
+# -------- Relación AsignaciónCursoDocente --------
+class AsignacionCursoDocenteBase(BaseModel):
+    asignacion_id: int
+    curso_id: int
+    docente_id: int
+
+class AsignacionCursoDocenteCreate(AsignacionCursoDocenteBase):
+    pass
+
+class AsignacionCursoDocenteResponse(AsignacionCursoDocenteBase):
+    id: int
     class Config:
         orm_mode = True

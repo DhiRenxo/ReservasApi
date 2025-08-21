@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 from models.carrera import Carrera
-from models.asignacion import asignacion_curso
 
 class Curso(Base):
     __tablename__ = "cursos"
@@ -20,5 +19,8 @@ class Curso(Base):
 
     carrera = relationship("Carrera")
 
-    asignaciones = relationship("AsignacionDocenteTemporal", secondary=asignacion_curso, back_populates="cursos")
+    asignaciones_curso_docente = relationship(
+        "AsignacionCursoDocente",
+        back_populates="curso"
+    ) 
     
