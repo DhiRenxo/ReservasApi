@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
 
-# -------- Asignación Base --------
+
 class AsignacionBase(BaseModel):
     carreraid: int
     plan: str
@@ -14,11 +14,9 @@ class AsignacionBase(BaseModel):
     estado: Optional[bool] = True
     fecha_inicio: Optional[datetime] = None
 
-# -------- Crear Asignación --------
 class AsignacionCreate(AsignacionBase):
     pass
 
-# -------- Actualizar Asignación --------
 class AsignacionUpdate(BaseModel):
     plan: Optional[str] = None
     ciclo: Optional[str] = None
@@ -35,8 +33,6 @@ class AsignacionUpdateEstado(BaseModel):
     estado: bool
 
 
-
-# -------- Response --------
 class AsignacionResponse(AsignacionBase):
     id: int
     fecha_asignacion: datetime
@@ -46,14 +42,21 @@ class AsignacionResponse(AsignacionBase):
         orm_mode = True
 
 
-# -------- Relación AsignaciónCursoDocente --------
+class CursosUpdate(BaseModel):
+    curso_ids: List[int]
+    docente_id: Optional[int] = None
+
 class AsignacionCursoDocenteBase(BaseModel):
     asignacion_id: int
     curso_id: int
-    docente_id: int
+    docente_id: Optional[int] = None
 
 class AsignacionCursoDocenteCreate(AsignacionCursoDocenteBase):
     pass
+
+class DocenteUpdate(BaseModel):
+    curso_id: int
+    docente_id: int
 
 class AsignacionCursoDocenteResponse(AsignacionCursoDocenteBase):
     id: int

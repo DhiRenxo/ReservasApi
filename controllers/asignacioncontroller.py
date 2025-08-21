@@ -62,6 +62,10 @@ def delete_asignacion(asignacion_id: int, db: Session = Depends(get_db), dict = 
 # Relación Asignacion - Curso - Docente
 # -----------------------------
 
+@router.patch("/{asignacion_id}/cursos", response_model=List[asignacion_schema.AsignacionCursoDocenteResponse])
+def actualizar_cursos(asignacion_id: int, data: asignacion_schema.CursosUpdate, db: Session = Depends(get_db)):
+    return asignacion_service.actualizar_cursos_asignacion(db, asignacion_id, data.curso_ids)
+
 @router.post("/relacion", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
 def add_asignacion_curso_docente(relacion: asignacion_schema.AsignacionCursoDocenteCreate, db: Session = Depends(get_db), dict = Depends(get_current_user)):
     return asignacion_service.add_asignacion_curso_docente(db, relacion)
@@ -72,9 +76,34 @@ def get_asignacion_curso_docentes(asignacion_id: int, db: Session = Depends(get_
     return asignacion_service.get_asignacion_curso_docentes(db, asignacion_id)
 
 
-@router.patch("/asignaciones/{asignacion_id}/estado", response_model=asignacion_schema.AsignacionResponse)
-def cambiar_estado_asignacion(asignacion_id: int, data: asignacion_schema.AsignacionUpdateEstado, db: Session = Depends(get_db), user: dict = Depends(get_current_user) ):
-    asignacion = asignacion_service.update_asignacion_estado(db, asignacion_id, data.estado)
+@router.patch("/{asignacion_id}/estado", response_model=asignacion_schema.AsignacionResponse)
+def cambiar_estado_asignacion(
+    asignacion_id: int,
+    data: dict, 
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user)
+):
+    if "estado" not in data:
+        raise HTTPException(status_code=400, detail="El campo 'estado' es requerido")
+
+    estado_value = data["estado"]
+
+    if isinstance(estado_value, str):
+        estado_value = estado_value.lower() in ["true", "1", "yes"]
+    elif isinstance(estado_value, int):
+        estado_value = bool(estado_value)
+
+    asignacion = asignacion_service.update_asignacion_estado(db, asignacion_id, estado_value)
     if not asignacion:
         raise HTTPException(status_code=404, detail="Asignación no encontrada")
+
     return asignacion
+
+@router.patch("/{asignacion_id}/relaciones/docente", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
+def actualizar_docente(asignacion_id: int, data: asignacion_schema.DocenteUpdate, db: Session = Depends(get_db), dict = Depends(get_current_user)):
+    relacion = asignacion_service.update_docente_curso_asignacion(
+        db, asignacion_id, data.curso_id, data.docente_id
+    )
+    if not relacion:
+        raise HTTPException(status_code=404, detail="No se encontró la relación asignación-curso")
+    return relacion

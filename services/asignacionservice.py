@@ -112,3 +112,42 @@ def update_asignacion_estado(db: Session, asignacion_id: int, estado: bool):
     db.commit()
     db.refresh(asignacion)
     return asignacion
+
+def actualizar_cursos_asignacion(db: Session, asignacion_id: int, curso_ids: list[int]):
+    relaciones_existentes = db.query(AsignacionCursoDocente).filter(
+        AsignacionCursoDocente.asignacion_id == asignacion_id
+    ).all()
+    
+    relaciones_existentes_ids = {r.curso_id: r for r in relaciones_existentes}
+
+    for curso_id in curso_ids:
+        if curso_id not in relaciones_existentes_ids:
+            db_relacion = AsignacionCursoDocente(
+                asignacion_id=asignacion_id,
+                curso_id=curso_id,
+                docente_id=None 
+            )
+            db.add(db_relacion)
+
+    db.commit()
+
+
+    return db.query(AsignacionCursoDocente).filter(
+        AsignacionCursoDocente.asignacion_id == asignacion_id
+    ).all()
+
+
+
+def update_docente_curso_asignacion(db: Session, asignacion_id: int, curso_id: int, docente_id: int):
+    relacion = db.query(AsignacionCursoDocente).filter(
+        AsignacionCursoDocente.asignacion_id == asignacion_id,
+        AsignacionCursoDocente.curso_id == curso_id
+    ).first()
+    
+    if not relacion:
+        return None
+    
+    relacion.docente_id = docente_id
+    db.commit()
+    db.refresh(relacion)
+    return relacion
