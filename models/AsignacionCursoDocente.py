@@ -12,6 +12,8 @@ class AsignacionCursoDocente(Base):
     asignacion_id = Column(Integer, ForeignKey("asignaciones.id"))
     curso_id = Column(Integer, ForeignKey("cursos.id"))
     docente_id = Column(Integer, ForeignKey("docentes.id"), nullable=True)
+    seccion = Column(Integer, default=1)
+
 
     asignacion = relationship("Asignacion", back_populates="asignaciones_curso_docente")
     curso = relationship("Curso", back_populates="asignaciones_curso_docente")

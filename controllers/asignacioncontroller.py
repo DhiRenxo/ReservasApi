@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 import services.asignacionservice as asignacion_service
 import schemas.asignacion as asignacion_schema
+from services.asignacionservice import recalcular_horas_docente
 from typing import List
 from utils.google_auth import get_current_user
 
@@ -102,8 +103,51 @@ def cambiar_estado_asignacion(
 @router.patch("/{asignacion_id}/relaciones/docente", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
 def actualizar_docente(asignacion_id: int, data: asignacion_schema.DocenteUpdate, db: Session = Depends(get_db), dict = Depends(get_current_user)):
     relacion = asignacion_service.update_docente_curso_asignacion(
-        db, asignacion_id, data.curso_id, data.docente_id
+        db, asignacion_id, data.curso_id, data.seccion, data.docente_id
     )
     if not relacion:
-        raise HTTPException(status_code=404, detail="No se encontró la relación asignación-curso")
+        raise HTTPException(status_code=404, detail="No se encontró la relación asignación-curso-sección")
+    return relacion
+
+@router.delete("/{asignacion_id}/secciones/{seccion}")
+def delete_seccion_asignacion(
+    asignacion_id: int,
+    seccion: int,
+    db: Session = Depends(get_db),
+    dict = Depends(get_current_user)
+):
+    result = asignacion_service.delete_seccion_asignacion(db, asignacion_id, seccion)
+    if not result:
+        raise HTTPException(status_code=404, detail="No se encontraron relaciones para esa sección")
+    return result
+
+@router.put("/recalcular/{docente_id}", response_model=dict)
+def endpoint_recalcular_horas(docente_id: int, db: Session = Depends(get_db)):
+    docente = recalcular_horas_docente(db, docente_id)   # ✅ ahora sí usa services
+    if not docente:
+        raise HTTPException(status_code=404, detail="Docente no encontrado")
+    return {
+        "id": docente.id,
+        "nombre": docente.nombre,
+        "horasactual": docente.horasactual,
+        "horastemporales": docente.horastemporales,
+    }
+
+
+@router.patch("/relaciones/{relacion_id}", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
+def actualizar_relacion(
+    relacion_id: int,
+    data: asignacion_schema.AsignacionCursoDocenteBase,
+    db: Session = Depends(get_db),
+    dict = Depends(get_current_user)
+):
+    relacion = db.query(asignacion_schema.AsignacionCursoDocente).filter(asignacion_schema.AsignacionCursoDocente.id == relacion_id).first()
+    if not relacion:
+        raise HTTPException(status_code=404, detail="Relación no encontrada")
+
+    for field, value in data.dict(exclude_unset=True).items():
+        setattr(relacion, field, value)
+
+    db.commit()
+    db.refresh(relacion)
     return relacion

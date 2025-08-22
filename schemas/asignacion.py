@@ -49,13 +49,20 @@ class CursosUpdate(BaseModel):
 class AsignacionCursoDocenteBase(BaseModel):
     asignacion_id: int
     curso_id: int
+    seccion: int
     docente_id: Optional[int] = None
+    es_bloque: Optional[bool] = False
+    bloque: Optional[str] = None   
+    duplica_horas: Optional[bool] = False
+    comentario: Optional[str] = None
+    disponibilidad: Optional[str] = None
 
 class AsignacionCursoDocenteCreate(AsignacionCursoDocenteBase):
     pass
 
 class DocenteUpdate(BaseModel):
     curso_id: int
+    seccion: int
     docente_id: int
 
 class AsignacionCursoDocenteResponse(AsignacionCursoDocenteBase):
