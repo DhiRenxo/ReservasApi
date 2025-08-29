@@ -1,4 +1,3 @@
-# services/asignacion.py
 from sqlalchemy.orm import Session
 from datetime import datetime
 from models.docente import Docente
@@ -12,9 +11,6 @@ from schemas.asignacion import (
     AsignacionCursoDocenteCreate
 )
 
-# -----------------------------
-# CRUD Asignacion
-# -----------------------------
 
 def create_asignacion(db: Session, asignacion: AsignacionCreate):
     db_asignacion = Asignacion(
@@ -23,7 +19,7 @@ def create_asignacion(db: Session, asignacion: AsignacionCreate):
         ciclo=asignacion.ciclo,
         modalidad=asignacion.modalidad,
         cantidad_secciones=asignacion.cantidad_secciones,
-        secciones_asignadas=asignacion.secciones_asignadas,
+        seccion_asignada = asignacion.seccion_asignada,
         estado=asignacion.estado,
         fecha_inicio=asignacion.fecha_inicio,
         fecha_asignacion=datetime.utcnow()
@@ -84,10 +80,6 @@ def delete_asignacion(db: Session, asignacion_id: int):
     return db_asignacion
 
 
-# -----------------------------
-# Relación Asignacion - Curso - Docente
-# -----------------------------
-
 def add_asignacion_curso_docente(db: Session, relacion: AsignacionCursoDocenteCreate):
     db_relacion = AsignacionCursoDocente(
         asignacion_id=relacion.asignacion_id,
@@ -115,29 +107,23 @@ def update_asignacion_estado(db: Session, asignacion_id: int, estado: bool):
     db.refresh(asignacion)
     return asignacion
 
+
 def actualizar_cursos_asignacion(db: Session, asignacion_id: int, curso_ids: list[int]):
     asignacion = get_asignacion(db, asignacion_id)
     if not asignacion:
         return []
 
     cantidad_secciones = asignacion.cantidad_secciones or 1
-
-    # 🔹 Deduplicar curso_ids que llegan del front
     curso_ids = list(set(curso_ids))
 
-    # Relaciones existentes
     relaciones_existentes = db.query(AsignacionCursoDocente).filter(
         AsignacionCursoDocente.asignacion_id == asignacion_id
     ).all()
 
-    # Set de (curso_id, seccion) ya presentes
     existentes = {(r.curso_id, r.seccion) for r in relaciones_existentes}
-
-    # ¿Qué secciones faltan crear?
     secciones_presentes = {r.seccion for r in relaciones_existentes}
     secciones_a_crear = [s for s in range(1, cantidad_secciones + 1) if s not in secciones_presentes]
 
-    # Crear sólo lo que falta y actualizar el set en caliente
     for curso_id in curso_ids:
         for seccion in secciones_a_crear:
             clave = (curso_id, seccion)
@@ -159,7 +145,6 @@ def actualizar_cursos_asignacion(db: Session, asignacion_id: int, curso_ids: lis
     ).all()
 
 
-
 def update_docente_curso_asignacion(db: Session, asignacion_id: int, curso_id: int, seccion: int, docente_id: int):
     relacion = db.query(AsignacionCursoDocente).filter(
         AsignacionCursoDocente.asignacion_id == asignacion_id,
@@ -174,6 +159,7 @@ def update_docente_curso_asignacion(db: Session, asignacion_id: int, curso_id: i
     db.commit()
     db.refresh(relacion)
     return relacion
+
 
 def delete_seccion_asignacion(db: Session, asignacion_id: int, seccion: int):
     relaciones = db.query(AsignacionCursoDocente).filter(
@@ -190,6 +176,7 @@ def delete_seccion_asignacion(db: Session, asignacion_id: int, seccion: int):
     db.commit()
     return {"asignacion_id": asignacion_id, "seccion": seccion, "eliminados": len(relaciones)}
 
+
 def recalcular_horas_docente(db: Session, docente_id: int):
     docente = db.query(Docente).filter(Docente.id == docente_id).first()
     if not docente:
@@ -202,23 +189,77 @@ def recalcular_horas_docente(db: Session, docente_id: int):
     )
 
     horas_temporales = 0
+
     for rel in relaciones:
         curso = db.query(Curso).filter(Curso.id == rel.curso_id).first()
-        if not curso:
+        asignacion = db.query(Asignacion).filter(Asignacion.id == rel.asignacion_id).first()
+        if not curso or not asignacion:
             continue
 
-        horas_curso = curso.horas
+        horas_curso = 0  
 
-        if rel.es_bloque and rel.duplica_horas and curso.modalidad.lower() == "presencial":
-            horas_curso *= 2   
+        # ✅ Si es bloque: solo suma si está activo
+        if rel.es_bloque and rel.bloque in ["A", "B"]:
+            if rel.activo:
+                horas_curso = curso.horas
+                if rel.duplica_horas and asignacion.modalidad and asignacion.modalidad.upper() == "PRESENCIAL":
+                    horas_curso *= 2
+
+        # ✅ Si no es bloque: suma siempre (sin importar activo)
+        else:
+            horas_curso = curso.horas
 
         horas_temporales += horas_curso
 
+    # ✅ Actualizar horas del docente
     horas_reales = (docente.horasactual or 0) - (docente.horastemporales or 0)
-
     docente.horastemporales = horas_temporales
     docente.horasactual = horas_reales + horas_temporales
 
     db.commit()
     db.refresh(docente)
     return docente
+
+
+
+def activar_bloque(db: Session, relacion_id: int):
+    relacion = db.query(AsignacionCursoDocente).filter(
+        AsignacionCursoDocente.id == relacion_id
+    ).first()
+
+    if not relacion:
+        return None
+
+    if relacion.es_bloque:
+        db.query(AsignacionCursoDocente).filter(
+            AsignacionCursoDocente.asignacion_id == relacion.asignacion_id,
+            AsignacionCursoDocente.curso_id == relacion.curso_id,
+            AsignacionCursoDocente.es_bloque == True,
+            AsignacionCursoDocente.id != relacion.id
+        ).update({AsignacionCursoDocente.activo: False})
+
+        relacion.activo = True
+
+    db.commit()
+    db.refresh(relacion)
+
+    if relacion.docente_id:
+        recalcular_horas_docente(db, relacion.docente_id)
+
+    return relacion
+
+
+def actualizar_comentario_disponibilidad(db: Session, relacion_id: int, data):
+    relacion = db.query(AsignacionCursoDocente).filter(AsignacionCursoDocente.id == relacion_id).first()
+    if not relacion:
+        return None
+
+    if data.comentario is not None:
+        relacion.comentario = data.comentario
+
+    if data.disponibilidad is not None:
+        relacion.disponibilidad = data.disponibilidad
+
+    db.commit()
+    db.refresh(relacion)
+    return relacion

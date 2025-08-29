@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models.rol import Rol
-from schemas.rol import RolCreate
+from schemas.rol import RolCreate, RolUpdate
+
 
 def get_all(db: Session):
     return db.query(Rol).all()
@@ -15,3 +16,12 @@ def create(db: Session, data: RolCreate):
     db.commit()
     db.refresh(nuevo)
     return nuevo
+
+def update(db: Session, id: int, data: RolUpdate):
+    rol = db.query(Rol).filter(Rol.id == id).first()
+    if not rol:
+        return None
+    rol.nombre = data.nombre
+    db.commit()
+    db.refresh(rol)
+    return rol

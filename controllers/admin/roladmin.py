@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from schemas.rol import RolCreate, RolResponse
+from schemas.rol import RolCreate, RolResponse, RolUpdate
 from services import rolservice
 from utils.google_auth import get_current_user 
 
@@ -22,3 +22,9 @@ def obtener(id: int, db: Session = Depends(get_db), user: dict = Depends(get_cur
 def crear(data: RolCreate, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
     return rolservice.create(db, data)
 
+@router.put("/{id}", response_model=RolResponse)
+def actualizar(id: int, data: RolCreate, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
+    rol = rolservice.update(db, id, data)
+    if not rol:
+        raise HTTPException(status_code=404, detail="Rol no encontrado")
+    return rol  

@@ -14,8 +14,10 @@ class AsignacionCursoDocente(Base):
     bloque = Column(String(1), nullable=True)        
     duplica_horas = Column(Boolean, default=False)   
     comentario = Column(Text, nullable=True)         
-    disponibilidad = Column(String(50), nullable=True)  
+    disponibilidad = Column(String(50), nullable=True) 
+    activo = Column(Boolean, default=True)
 
     asignacion = relationship("Asignacion", back_populates="asignaciones_curso_docente")
     curso = relationship("Curso", back_populates="asignaciones_curso_docente")
     docente = relationship("Docente", back_populates="asignaciones_curso_docente")
+    

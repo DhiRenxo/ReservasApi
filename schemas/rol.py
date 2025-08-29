@@ -1,11 +1,13 @@
 from pydantic import BaseModel
-from utils.enums import RolUsuario
 
 class RolBase(BaseModel):
-    nombre: RolUsuario
+    nombre: str  # ahora cualquier string es válido
 
 class RolCreate(RolBase):
     pass
+
+class RolUpdate(BaseModel):
+    nombre: str  # cualquier string
 
 class RolResponse(RolBase):
     id: int

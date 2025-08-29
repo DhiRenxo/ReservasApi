@@ -22,3 +22,9 @@ class Docente(Base):
         "AsignacionCursoDocente",
         back_populates="docente"
     )
+
+    disponibilidades = relationship(
+        "DisponibilidadDocente",
+        back_populates="docente",
+        cascade="all, delete-orphan"
+    )

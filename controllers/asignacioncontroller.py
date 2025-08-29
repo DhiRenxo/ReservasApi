@@ -1,4 +1,3 @@
-# routes/asignacion.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -7,15 +6,13 @@ import schemas.asignacion as asignacion_schema
 from services.asignacionservice import recalcular_horas_docente
 from typing import List
 from utils.google_auth import get_current_user
+from models.AsignacionCursoDocente import AsignacionCursoDocente 
 
 router = APIRouter(
     prefix="/asignaciones",
     tags=["Asignaciones"]
 )
 
-# -----------------------------
-# CRUD Asignacion
-# -----------------------------
 
 @router.post("/", response_model=asignacion_schema.AsignacionResponse)
 def create_asignacion(asignacion: asignacion_schema.AsignacionCreate, db: Session = Depends(get_db), dict = Depends(get_current_user)):
@@ -59,13 +56,10 @@ def delete_asignacion(asignacion_id: int, db: Session = Depends(get_db), dict = 
     return db_asignacion
 
 
-# -----------------------------
-# Relación Asignacion - Curso - Docente
-# -----------------------------
-
 @router.patch("/{asignacion_id}/cursos", response_model=List[asignacion_schema.AsignacionCursoDocenteResponse])
 def actualizar_cursos(asignacion_id: int, data: asignacion_schema.CursosUpdate, db: Session = Depends(get_db)):
     return asignacion_service.actualizar_cursos_asignacion(db, asignacion_id, data.curso_ids)
+
 
 @router.post("/relacion", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
 def add_asignacion_curso_docente(relacion: asignacion_schema.AsignacionCursoDocenteCreate, db: Session = Depends(get_db), dict = Depends(get_current_user)):
@@ -78,12 +72,7 @@ def get_asignacion_curso_docentes(asignacion_id: int, db: Session = Depends(get_
 
 
 @router.patch("/{asignacion_id}/estado", response_model=asignacion_schema.AsignacionResponse)
-def cambiar_estado_asignacion(
-    asignacion_id: int,
-    data: dict, 
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user)
-):
+def cambiar_estado_asignacion(asignacion_id: int, data: dict, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
     if "estado" not in data:
         raise HTTPException(status_code=400, detail="El campo 'estado' es requerido")
 
@@ -100,6 +89,7 @@ def cambiar_estado_asignacion(
 
     return asignacion
 
+
 @router.patch("/{asignacion_id}/relaciones/docente", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
 def actualizar_docente(asignacion_id: int, data: asignacion_schema.DocenteUpdate, db: Session = Depends(get_db), dict = Depends(get_current_user)):
     relacion = asignacion_service.update_docente_curso_asignacion(
@@ -109,21 +99,18 @@ def actualizar_docente(asignacion_id: int, data: asignacion_schema.DocenteUpdate
         raise HTTPException(status_code=404, detail="No se encontró la relación asignación-curso-sección")
     return relacion
 
+
 @router.delete("/{asignacion_id}/secciones/{seccion}")
-def delete_seccion_asignacion(
-    asignacion_id: int,
-    seccion: int,
-    db: Session = Depends(get_db),
-    dict = Depends(get_current_user)
-):
+def delete_seccion_asignacion(asignacion_id: int, seccion: int, db: Session = Depends(get_db), dict = Depends(get_current_user)):
     result = asignacion_service.delete_seccion_asignacion(db, asignacion_id, seccion)
     if not result:
         raise HTTPException(status_code=404, detail="No se encontraron relaciones para esa sección")
     return result
 
+
 @router.put("/recalcular/{docente_id}", response_model=dict)
 def endpoint_recalcular_horas(docente_id: int, db: Session = Depends(get_db)):
-    docente = recalcular_horas_docente(db, docente_id)   # ✅ ahora sí usa services
+    docente = recalcular_horas_docente(db, docente_id)
     if not docente:
         raise HTTPException(status_code=404, detail="Docente no encontrado")
     return {
@@ -135,13 +122,11 @@ def endpoint_recalcular_horas(docente_id: int, db: Session = Depends(get_db)):
 
 
 @router.patch("/relaciones/{relacion_id}", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
-def actualizar_relacion(
-    relacion_id: int,
-    data: asignacion_schema.AsignacionCursoDocenteBase,
-    db: Session = Depends(get_db),
-    dict = Depends(get_current_user)
-):
-    relacion = db.query(asignacion_schema.AsignacionCursoDocente).filter(asignacion_schema.AsignacionCursoDocente.id == relacion_id).first()
+def actualizar_relacion(relacion_id: int, data: asignacion_schema.AsignacionCursoDocenteUpdate, db: Session = Depends(get_db), dict = Depends(get_current_user)):
+    relacion = db.query(AsignacionCursoDocente).filter(
+        AsignacionCursoDocente.id == relacion_id
+    ).first()
+
     if not relacion:
         raise HTTPException(status_code=404, detail="Relación no encontrada")
 
@@ -151,3 +136,31 @@ def actualizar_relacion(
     db.commit()
     db.refresh(relacion)
     return relacion
+
+
+@router.patch("/relaciones/{relacion_id}/activar", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
+def activar_bloque_relacion(relacion_id: int, db: Session = Depends(get_db), dict = Depends(get_current_user)):
+    relacion = asignacion_service.activar_bloque(db, relacion_id)
+    if not relacion:
+        raise HTTPException(status_code=404, detail="Relación no encontrada")
+    return relacion
+
+
+@router.patch("/relaciones/{relacion_id}/comentario", response_model=asignacion_schema.AsignacionCursoDocenteResponse)
+def actualizar_comentario_y_disponibilidad(relacion_id: int, data: asignacion_schema.AsignacionCursoDocenteComentarioUpdate, db: Session = Depends(get_db), dict = Depends(get_current_user)):
+    relacion = asignacion_service.actualizar_comentario_disponibilidad(db, relacion_id, data)
+    if not relacion:
+        raise HTTPException(status_code=404, detail="Relación no encontrada")
+    return relacion
+
+@router.put("/relaciones/{relacion_id}/desactivar-bloque")
+def desactivar_bloque(relacion_id: int, db: Session = Depends(get_db)):
+    relacion = db.query(AsignacionCursoDocente).filter(AsignacionCursoDocente.id == relacion_id).first()
+    if not relacion:
+        raise HTTPException(status_code=404, detail="Relación no encontrada")
+
+    relacion.activo = False
+    db.commit()
+    db.refresh(relacion)
+    return {"id": relacion.id, "activo": relacion.activo}
+

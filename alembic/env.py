@@ -17,6 +17,7 @@ from models.carrera import Carrera
 from models.seccion import Seccion
 from models.asignacion import Asignacion
 from models.AsignacionCursoDocente import AsignacionCursoDocente
+from models.DisponibilidadDocente import DisponibilidadDocente
 
 
 from sqlalchemy import engine_from_config, pool

@@ -7,6 +7,7 @@ from schemas.token import TokenResponse, GoogleLoginRequest
 from models.usuario import Usuario
 from datetime import timedelta
 from config import settings
+from models.docente import Docente
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -19,13 +20,16 @@ def login_google(request: GoogleLoginRequest, db: Session = Depends(get_db)):
     usuario = db.query(Usuario).filter(Usuario.correo == user_data["correo"]).first()
 
     if not usuario:
+        docente = db.query(Docente).filter(Docente.nombre == user_data["nombre"]).first()
+        rol_id = 1 if docente else 6
+
         usuario = Usuario(
             nombre=user_data["nombre"],
             correo=user_data["correo"],
             estado=True,
             email_verificado=user_data["verificado"],
             foto_url=user_data["foto"],
-            rolid=5
+            rolid=rol_id
         )
         db.add(usuario)
         db.commit()
@@ -36,4 +40,13 @@ def login_google(request: GoogleLoginRequest, db: Session = Depends(get_db)):
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
-    return {"access_token": token}
+    return {
+        "access_token": token,
+        "usuario": {
+            "id": usuario.id,
+            "nombre": usuario.nombre,
+            "correo": usuario.correo,
+            "rolid": usuario.rolid,
+            "foto_url": usuario.foto_url
+        }
+    }
