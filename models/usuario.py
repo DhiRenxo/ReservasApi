@@ -24,5 +24,6 @@ class Usuario(Base):
     contacto_nombre = Column(String(50), nullable=True)
     contacto_numero = Column(String(20), nullable=True)
     correo_alternativo = Column(String(100), nullable=True)
+    cod_docente = Column(String(5), nullable=True)
 
     rol = relationship("Rol", back_populates="usuarios")

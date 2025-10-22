@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 from models.usuario import Usuario
-from schemas.usuario import UsuarioCreate, UsuarioUpdate
+from schemas.usuario import UsuarioCreate, UsuarioUpdate, UsuarioDocenteCodigoUpdate
 from datetime import datetime
 
 def get_all(db: Session):
@@ -39,4 +40,22 @@ def delete(db: Session, id: int):
     if usuario:
         db.delete(usuario)
         db.commit()
+    return usuario
+
+def actualizar_cod_docente_service(db: Session, usuario_id: int, datos: UsuarioDocenteCodigoUpdate):
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # 🔒 Verificar que el usuario tenga rol docente (ejemplo: rolid = 2)
+    if usuario.rolid != 1:
+        raise HTTPException(status_code=403, detail="Solo los usuarios con rol docente pueden tener un código docente")
+
+    # Actualizar el código docente si se envía
+    if datos.cod_docente:
+        usuario.cod_docente = datos.cod_docente
+
+    db.commit()
+    db.refresh(usuario)
     return usuario

@@ -20,6 +20,7 @@ class UsuarioBase(BaseModel):
     correo_alternativo: Optional[EmailStr] = None
     fechacreacion: Optional[datetime] = None
     fechaactualizacion: Optional[datetime] = None
+    cod_docente: Optional[str] = None
 
 class UsuarioCreate(UsuarioBase):
     pass
@@ -42,6 +43,14 @@ class UsuarioUpdate(BaseModel):
 
     correo_alternativo: Optional[EmailStr] = None
     fechaactualizacion: Optional[datetime] = None
+
+class UsuarioDocenteCodigoUpdate(BaseModel):
+    cod_docente: Optional[str] = Field(
+        None,
+        min_length=3,
+        max_length=10,
+        description="Código asignado por la institución solo para usuarios con rol docente"
+    )
 
 class UsuarioResponse(UsuarioBase):
     id: int

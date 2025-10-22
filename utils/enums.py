@@ -6,6 +6,7 @@ class RolUsuario(str, Enum):
     SOPORTETI = "SOPORTE DE TI"
     PROGRAMACION = "PROGRAMACION"
     ADMINISTRADOR = "ADMINISTRADOR"
+    INVITADO = "INVITADO"
 
 class EstadoReserva(str, Enum):
     PENDIENTE = "PENDIENTE"
