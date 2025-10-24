@@ -10,6 +10,7 @@ class Docente(Base):
     nombre = Column(String(100), nullable=False, unique=True)
     codigo = Column(String(20), nullable=False, unique=True)
     estado = Column(Boolean, default=True)
+    correo = Column(String(50), nullable= False)
     tipocontrato = Column(String(50), nullable=False)
     horassemanal = Column(Integer, nullable=False)
     horasactual = Column(Integer, nullable=True)

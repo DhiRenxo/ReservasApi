@@ -1,111 +1,109 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from models.DisponibilidadDocente import DisponibilidadDocente
+from models.docente import Docente
 from schemas.Disponibilidad import DisponibilidadDocenteCreate, DisponibilidadDocenteUpdate
 
 
 class DisponibilidadService:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-    # Crear o actualizar disponibilidad según modalidad, turno y docente
-    def create_or_update(self, data: DisponibilidadDocenteCreate) -> DisponibilidadDocente:
-        # Buscar si ya existe una disponibilidad para el docente con misma modalidad y turno
-        disponibilidad = self.db.query(DisponibilidadDocente).filter(
-            DisponibilidadDocente.docente_id == data.docente_id,
-            DisponibilidadDocente.modalidad == data.modalidad,
-            DisponibilidadDocente.turno == data.turno,
-            DisponibilidadDocente.dia == data.dia
-        ).first()
+    async def get_docente_by_correo(self, correo: str) -> Optional[Docente]:
+        result = await self.db.execute(select(Docente).filter(Docente.correo == correo))
+        return result.scalar_one_or_none()
 
-        horarios_serializados = [
-            {"hora_inicio": str(h.hora_inicio), "hora_fin": str(h.hora_fin)}
-            for h in data.horarios
-        ] if data.horarios else None
+    async def create_or_update(self, data: DisponibilidadDocenteCreate, correo_docente: str) -> DisponibilidadDocente:
+        docente = await self.get_docente_by_correo(correo_docente)
+        if not docente:
+            return None
+
+        result = await self.db.execute(
+            select(DisponibilidadDocente).filter(
+                DisponibilidadDocente.docente_id == docente.id,
+                DisponibilidadDocente.modalidad == data.modalidad,
+                DisponibilidadDocente.turno == data.turno,
+                DisponibilidadDocente.dia == data.dia
+            )
+        )
+        disponibilidad = result.scalar_one_or_none()
+
+        horarios_serializados = [h.dict() for h in data.horarios] if data.horarios else []
 
         if disponibilidad:
-            # 👉 Si existe, actualizamos
             disponibilidad.horarios = horarios_serializados
-            self.db.commit()
-            self.db.refresh(disponibilidad)
+            await self.db.commit()
+            await self.db.refresh(disponibilidad)
             return disponibilidad
         else:
-            # 👉 Si no existe, creamos
             nueva = DisponibilidadDocente(
-                docente_id=data.docente_id,
+                docente_id=docente.id,
                 dia=data.dia,
                 modalidad=data.modalidad,
                 turno=data.turno,
                 horarios=horarios_serializados
             )
             self.db.add(nueva)
-            self.db.commit()
-            self.db.refresh(nueva)
+            await self.db.commit()
+            await self.db.refresh(nueva)
             return nueva
 
-    # Obtener todas las disponibilidades de un docente (con filtros opcionales)
-    def get_by_docente(
+    async def get_by_docente(
         self,
         docente_id: int,
         modalidad: Optional[str] = None,
         turno: Optional[str] = None
     ) -> List[DisponibilidadDocente]:
-        query = self.db.query(DisponibilidadDocente).filter(
-            DisponibilidadDocente.docente_id == docente_id
-        )
+        query = select(DisponibilidadDocente).filter(DisponibilidadDocente.docente_id == docente_id)
         if modalidad:
             query = query.filter(DisponibilidadDocente.modalidad == modalidad)
         if turno:
             query = query.filter(DisponibilidadDocente.turno == turno)
-        return query.all()
+        result = await self.db.execute(query)
+        return result.scalars().all()
 
-    # Obtener disponibilidad por ID
-    def get_by_id(self, id: int) -> Optional[DisponibilidadDocente]:
-        return self.db.query(DisponibilidadDocente).filter(DisponibilidadDocente.id == id).first()
+    async def get_by_id(self, id: int) -> Optional[DisponibilidadDocente]:
+        result = await self.db.execute(select(DisponibilidadDocente).filter(DisponibilidadDocente.id == id))
+        return result.scalar_one_or_none()
 
-    # Actualizar disponibilidad (solo si coinciden los tres campos)
-    def update(self, id: int, data: DisponibilidadDocenteUpdate) -> Optional[DisponibilidadDocente]:
-        disponibilidad = self.get_by_id(id)
-        if not disponibilidad:
+    async def update(self, id: int, data: DisponibilidadDocenteUpdate, correo_docente: str) -> Optional[DisponibilidadDocente]:
+        docente = await self.get_docente_by_correo(correo_docente)
+        if not docente:
             return None
 
-        # Validar que coincide modalidad y turno
-        if (
-            data.modalidad and data.modalidad != disponibilidad.modalidad or
-            data.turno and data.turno != disponibilidad.turno or
-            data.dia and data.dia != disponibilidad.dia
-        ):
-            # 👉 Si no coincide, se guarda como nuevo registro
-            return self.create_or_update(DisponibilidadDocenteCreate(**data.dict()))
+        disponibilidad = await self.get_by_id(id)
+        if not disponibilidad or disponibilidad.docente_id != docente.id:
+            return None
 
         update_data = data.dict(exclude_unset=True)
         if "horarios" in update_data and update_data["horarios"] is not None:
-            update_data["horarios"] = [
-                {"hora_inicio": str(h.hora_inicio), "hora_fin": str(h.hora_fin)}
-                for h in update_data["horarios"]
-            ]
+            update_data["horarios"] = [h.dict() for h in update_data["horarios"]]
 
         for key, value in update_data.items():
             setattr(disponibilidad, key, value)
 
-        self.db.commit()
-        self.db.refresh(disponibilidad)
+        await self.db.commit()
+        await self.db.refresh(disponibilidad)
         return disponibilidad
 
-    # Eliminar disponibilidad (debe coincidir con modalidad y turno)
-    def delete(self, docente_id: int, modalidad: str, turno: str, dia: str) -> bool:
-        disponibilidad = self.db.query(DisponibilidadDocente).filter(
-            DisponibilidadDocente.docente_id == docente_id,
-            DisponibilidadDocente.modalidad == modalidad,
-            DisponibilidadDocente.turno == turno,
-            DisponibilidadDocente.dia == dia
-        ).first()
+    async def delete(self, dia: str, modalidad: str, turno: str, correo_docente: str) -> bool:
+        docente = await self.get_docente_by_correo(correo_docente)
+        if not docente:
+            return False
+
+        result = await self.db.execute(
+            select(DisponibilidadDocente).filter(
+                DisponibilidadDocente.docente_id == docente.id,
+                DisponibilidadDocente.modalidad == modalidad,
+                DisponibilidadDocente.turno == turno,
+                DisponibilidadDocente.dia == dia
+            )
+        )
+        disponibilidad = result.scalar_one_or_none()
         if not disponibilidad:
             return False
-        self.db.delete(disponibilidad)
-        self.db.commit()
+
+        await self.db.delete(disponibilidad)
+        await self.db.commit()
         return True
-
-
-def get_disponibilidades_by_docente(db: Session, docente_id: int):
-    return db.query(DisponibilidadDocente).filter(DisponibilidadDocente.docente_id == docente_id).all()

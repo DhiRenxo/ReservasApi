@@ -5,10 +5,9 @@ from app.database import Base, engine
 import os
 import sys
 
-
 # Routers
 from controllers.admin import ambienteadmin, tipoambiente, roladmin, usuarioadmin, cursoadmin, horarioadmin, docenteadmin, carreraadmin, seccionadmin
-from controllers import authcontroller,asignacioncontroller, disponibilidadcontroller
+from controllers import authcontroller,asignacioncontroller, disponibilidadcontroller, emailcontroller
 # Aquí puedes agregar más routers si tienes
 
 # Cargar variables de entorno
@@ -39,8 +38,9 @@ app.include_router(asignacioncontroller.router)
 app.include_router(carreraadmin.router)
 app.include_router(seccionadmin.router)
 app.include_router(disponibilidadcontroller.router)
+app.include_router(emailcontroller.router)
+
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 
 

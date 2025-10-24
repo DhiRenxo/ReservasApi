@@ -1,27 +1,41 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.future import select
+from fastapi import HTTPException
 from models.rol import Rol
 from schemas.rol import RolCreate, RolUpdate
 
 
-def get_all(db: Session):
-    return db.query(Rol).all()
-
-def get_by_id(db: Session, id: int):
-    return db.query(Rol).filter(Rol.id == id).first()
+async def get_all(db):
+    result = await db.execute(select(Rol))
+    return result.scalars().all()
 
 
-def create(db: Session, data: RolCreate):
+async def get_by_id(db, id: int):
+    result = await db.execute(
+        select(Rol).filter(Rol.id == id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def create(db, data: RolCreate):
+    # Verificar duplicado
+    result = await db.execute(select(Rol).filter(Rol.nombre == data.nombre))
+    existente = result.scalar_one_or_none()
+    if existente:
+        raise HTTPException(status_code=400, detail="El rol ya existe")
+
     nuevo = Rol(nombre=data.nombre)
     db.add(nuevo)
-    db.commit()
-    db.refresh(nuevo)
+    await db.commit()
+    await db.refresh(nuevo)
     return nuevo
 
-def update(db: Session, id: int, data: RolUpdate):
-    rol = db.query(Rol).filter(Rol.id == id).first()
+
+async def update(db, id: int, data: RolUpdate):
+    rol = await get_by_id(db, id)
     if not rol:
-        return None
+        raise HTTPException(status_code=404, detail="Rol no encontrado")
+
     rol.nombre = data.nombre
-    db.commit()
-    db.refresh(rol)
+    await db.commit()
+    await db.refresh(rol)
     return rol

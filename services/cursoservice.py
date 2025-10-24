@@ -1,54 +1,75 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.cursos import Curso
 from schemas.curso import CursoCreate, CursoUpdate
+from typing import List, Optional
 
-def get_all(db: Session):
-    return db.query(Curso).all()
 
-def get_active(db: Session):
-    return db.query(Curso).filter(Curso.estado == True).all()
+# ------------------------------
+# CRUD Curso (async)
+# ------------------------------
 
-def get_by_id(db: Session, curso_id: int):
-    return db.query(Curso).filter(Curso.id == curso_id).first()
+async def get_all(db: AsyncSession) -> List[Curso]:
+    result = await db.execute(select(Curso))
+    return result.scalars().all()
 
-def create(db: Session, curso: CursoCreate):
+
+async def get_active(db: AsyncSession) -> List[Curso]:
+    result = await db.execute(select(Curso).filter(Curso.estado == True))
+    return result.scalars().all()
+
+
+async def get_by_id(db: AsyncSession, curso_id: int) -> Optional[Curso]:
+    result = await db.execute(select(Curso).filter(Curso.id == curso_id))
+    return result.scalar_one_or_none()
+
+
+async def create(db: AsyncSession, curso: CursoCreate) -> Curso:
     db_curso = Curso(**curso.dict())
     db.add(db_curso)
-    db.commit()
-    db.refresh(db_curso)
+    await db.commit()
+    await db.refresh(db_curso)
     return db_curso
 
-def update(db: Session, curso_id: int, curso_data: CursoUpdate):
-    curso = get_by_id(db, curso_id)
+
+async def update(db: AsyncSession, curso_id: int, curso_data: CursoUpdate) -> Optional[Curso]:
+    curso = await get_by_id(db, curso_id)
     if curso:
-        for field, value in curso_data.dict().items():
+        for field, value in curso_data.dict(exclude_unset=True).items():
             setattr(curso, field, value)
-        db.commit()
-        db.refresh(curso)
+        await db.commit()
+        await db.refresh(curso)
     return curso
 
-def toggle_estado(db: Session, curso_id: int):
-    curso = get_by_id(db, curso_id)
+
+async def toggle_estado(db: AsyncSession, curso_id: int) -> Optional[Curso]:
+    curso = await get_by_id(db, curso_id)
     if curso:
         curso.estado = not curso.estado
-        db.commit()
-        db.refresh(curso)
+        await db.commit()
+        await db.refresh(curso)
     return curso
 
-def update_horas(db: Session, curso_id: int, horas: int):
-    curso = get_by_id(db, curso_id)
+
+async def update_horas(db: AsyncSession, curso_id: int, horas: int) -> Optional[Curso]:
+    curso = await get_by_id(db, curso_id)
     if curso:
         curso.horas = horas
-        db.commit()
-        db.refresh(curso)
+        await db.commit()
+        await db.refresh(curso)
     return curso
 
-def get_by_carrera_plan_ciclo(db: Session, carreid: int, plan: str, ciclo: str, modalidad: str):
-    return db.query(Curso).filter(
-        Curso.carreid == carreid,
-        Curso.plan == plan,
-        Curso.ciclo == ciclo,
-        Curso.modalidad == modalidad,
-        Curso.estado == True
-    ).all()
 
+async def get_by_carrera_plan_ciclo(
+    db: AsyncSession, carreid: int, plan: str, ciclo: str, modalidad: str
+) -> List[Curso]:
+    result = await db.execute(
+        select(Curso).filter(
+            Curso.carreid == carreid,
+            Curso.plan == plan,
+            Curso.ciclo == ciclo,
+            Curso.modalidad == modalidad,
+            Curso.estado == True
+        )
+    )
+    return result.scalars().all()

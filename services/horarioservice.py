@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.horario import HorarioAcademico
 from models.cursos import Curso
 from models.docente import Docente
@@ -7,7 +8,8 @@ from schemas.horario import HorarioAcademicoCreate
 from fastapi import HTTPException
 import re
 
-def validar_horario(horario: HorarioAcademicoCreate):
+
+async def validar_horario(horario: HorarioAcademicoCreate):
     if not re.match(r"^\d{2}:\d{2}$", horario.horainicio):
         raise HTTPException(status_code=400, detail="Hora inicio debe tener formato HH:MM")
     if not re.match(r"^\d{2}:\d{2}$", horario.horafin):
@@ -15,18 +17,22 @@ def validar_horario(horario: HorarioAcademicoCreate):
     if horario.horainicio >= horario.horafin:
         raise HTTPException(status_code=400, detail="Hora inicio debe ser menor que hora fin")
 
-def crear_horario(db: Session, horario_data: HorarioAcademicoCreate):
-    validar_horario(horario_data)
 
-    curso = db.query(Curso).filter(Curso.codigo == horario_data.curso).first()
+async def crear_horario(db: AsyncSession, horario_data: HorarioAcademicoCreate):
+    await validar_horario(horario_data)
+
+    result_curso = await db.execute(select(Curso).filter(Curso.codigo == horario_data.curso))
+    curso = result_curso.scalar_one_or_none()
     if not curso:
         raise HTTPException(status_code=404, detail=f"Curso con código '{horario_data.curso}' no encontrado")
 
-    docente = db.query(Docente).filter(Docente.codigo == horario_data.docente).first()
+    result_docente = await db.execute(select(Docente).filter(Docente.codigo == horario_data.docente))
+    docente = result_docente.scalar_one_or_none()
     if not docente:
         raise HTTPException(status_code=404, detail=f"Docente con sigla '{horario_data.docente}' no encontrado")
 
-    ambiente = db.query(Ambiente).filter(Ambiente.id == horario_data.ambienteid).first()
+    result_ambiente = await db.execute(select(Ambiente).filter(Ambiente.id == horario_data.ambienteid))
+    ambiente = result_ambiente.scalar_one_or_none()
     if not ambiente:
         raise HTTPException(status_code=404, detail=f"Ambiente ID '{horario_data.ambienteid}' no encontrado")
 
@@ -41,29 +47,36 @@ def crear_horario(db: Session, horario_data: HorarioAcademicoCreate):
     )
 
     db.add(horario)
-    db.commit()
-    db.refresh(horario)
+    await db.commit()
+    await db.refresh(horario)
     return horario
 
-def listar_horarios(db: Session):
-    return db.query(HorarioAcademico).all()
 
-def actualizar_horario(db: Session, id: int, horario_data: HorarioAcademicoCreate):
-    validar_horario(horario_data)
+async def listar_horarios(db: AsyncSession):
+    result = await db.execute(select(HorarioAcademico))
+    return result.scalars().all()
 
-    horario = db.query(HorarioAcademico).filter_by(id=id).first()
+
+async def actualizar_horario(db: AsyncSession, id: int, horario_data: HorarioAcademicoCreate):
+    await validar_horario(horario_data)
+
+    result_horario = await db.execute(select(HorarioAcademico).filter_by(id=id))
+    horario = result_horario.scalar_one_or_none()
     if not horario:
         raise HTTPException(status_code=404, detail="Horario no encontrado")
 
-    curso = db.query(Curso).filter(Curso.codigo == horario_data.curso).first()
+    result_curso = await db.execute(select(Curso).filter(Curso.codigo == horario_data.curso))
+    curso = result_curso.scalar_one_or_none()
     if not curso:
         raise HTTPException(status_code=404, detail=f"Curso con código '{horario_data.curso}' no encontrado")
 
-    docente = db.query(Docente).filter(Docente.codigo == horario_data.docente).first()
+    result_docente = await db.execute(select(Docente).filter(Docente.codigo == horario_data.docente))
+    docente = result_docente.scalar_one_or_none()
     if not docente:
         raise HTTPException(status_code=404, detail=f"Docente con sigla '{horario_data.docente}' no encontrado")
 
-    ambiente = db.query(Ambiente).filter(Ambiente.id == horario_data.ambienteid).first()
+    result_ambiente = await db.execute(select(Ambiente).filter(Ambiente.id == horario_data.ambienteid))
+    ambiente = result_ambiente.scalar_one_or_none()
     if not ambiente:
         raise HTTPException(status_code=404, detail=f"Ambiente ID '{horario_data.ambienteid}' no encontrado")
 
@@ -75,15 +88,17 @@ def actualizar_horario(db: Session, id: int, horario_data: HorarioAcademicoCreat
     horario.horafin = horario_data.horafin
     horario.grupo = horario_data.grupo
 
-    db.commit()
-    db.refresh(horario)
+    await db.commit()
+    await db.refresh(horario)
     return horario
 
-def eliminar_horario(db: Session, id: int):
-    horario = db.query(HorarioAcademico).filter_by(id=id).first()
+
+async def eliminar_horario(db: AsyncSession, id: int):
+    result_horario = await db.execute(select(HorarioAcademico).filter_by(id=id))
+    horario = result_horario.scalar_one_or_none()
     if not horario:
         raise HTTPException(status_code=404, detail="Horario no encontrado")
 
-    db.delete(horario)
-    db.commit()
+    await db.delete(horario)
+    await db.commit()
     return {"mensaje": "Horario eliminado correctamente"}

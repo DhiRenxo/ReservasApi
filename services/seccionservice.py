@@ -1,53 +1,61 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.seccion import Seccion
 from schemas.seccion import SeccionCreate, SeccionUpdate
-from datetime import date, timedelta
+from datetime import date
 
-def crear_seccion(db: Session, seccion: SeccionCreate):
+# Crear nueva sección
+async def crear_seccion(db: AsyncSession, seccion: SeccionCreate):
     nueva = Seccion(**seccion.dict())
     db.add(nueva)
-    db.commit()
-    db.refresh(nueva)
+    await db.commit()
+    await db.refresh(nueva)
     return nueva
 
-def obtener_secciones(db: Session):
-    return db.query(Seccion).all()
+# Obtener todas las secciones
+async def obtener_secciones(db: AsyncSession):
+    result = await db.execute(select(Seccion))
+    return result.scalars().all()
 
-def obtener_seccion_por_id(db: Session, id: int):
-    return db.query(Seccion).filter(Seccion.id == id).first()
+# Obtener sección por ID
+async def obtener_seccion_por_id(db: AsyncSession, id: int):
+    result = await db.execute(select(Seccion).filter(Seccion.id == id))
+    return result.scalar_one_or_none()
 
-def actualizar_seccion(db: Session, id: int, seccion_update: SeccionUpdate):
-    db_seccion = db.query(Seccion).filter(Seccion.id == id).first()
+# Actualizar sección
+async def actualizar_seccion(db: AsyncSession, id: int, seccion_update: SeccionUpdate):
+    db_seccion = await obtener_seccion_por_id(db, id)
     if db_seccion:
         for attr, value in seccion_update.dict(exclude_unset=True).items():
             setattr(db_seccion, attr, value)
-        db.commit()
-        db.refresh(db_seccion)
+        await db.commit()
+        await db.refresh(db_seccion)
     return db_seccion
 
-def eliminar_seccion(db: Session, id: int):
-    db_seccion = db.query(Seccion).filter(Seccion.id == id).first()
+# Eliminar sección
+async def eliminar_seccion(db: AsyncSession, id: int):
+    db_seccion = await obtener_seccion_por_id(db, id)
     if db_seccion:
-        db.delete(db_seccion)
-        db.commit()
+        await db.delete(db_seccion)
+        await db.commit()
     return db_seccion
 
 # Servicio 1: Actualizar solo estado y poner fecha_fin si se desactiva
-def actualizar_estado_seccion(db: Session, id: int, nuevo_estado: bool):
-    db_seccion = db.query(Seccion).filter(Seccion.id == id).first()
+async def actualizar_estado_seccion(db: AsyncSession, id: int, nuevo_estado: bool):
+    db_seccion = await obtener_seccion_por_id(db, id)
     if not db_seccion:
         return None
 
     db_seccion.estado = nuevo_estado
     if not nuevo_estado:
         db_seccion.fecha_fin = date.today()
-    db.commit()
-    db.refresh(db_seccion)
+    await db.commit()
+    await db.refresh(db_seccion)
     return db_seccion
 
 # Servicio 2: Si se activa una sección ya terminada, crear una nueva
-def reactivar_seccion_creando_nueva(db: Session, id: int, nuevo_inicio: date, nuevo_fin: date):
-    seccion_original = db.query(Seccion).filter(Seccion.id == id).first()
+async def reactivar_seccion_creando_nueva(db: AsyncSession, id: int, nuevo_inicio: date, nuevo_fin: date):
+    seccion_original = await obtener_seccion_por_id(db, id)
     if not seccion_original:
         return None
 
@@ -68,7 +76,6 @@ def reactivar_seccion_creando_nueva(db: Session, id: int, nuevo_inicio: date, nu
         estado=True
     )
     db.add(nueva_seccion)
-    db.commit()
-    db.refresh(nueva_seccion)
+    await db.commit()
+    await db.refresh(nueva_seccion)
     return nueva_seccion
-

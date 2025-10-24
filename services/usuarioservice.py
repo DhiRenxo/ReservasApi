@@ -1,61 +1,69 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.future import select
 from fastapi import HTTPException
 from models.usuario import Usuario
 from schemas.usuario import UsuarioCreate, UsuarioUpdate, UsuarioDocenteCodigoUpdate
 from datetime import datetime
 
-def get_all(db: Session):
-    return db.query(Usuario).all()
+ROL_DOCENTE = 4
 
-def get_by_id(db: Session, id: int):
-    return db.query(Usuario).filter(Usuario.id == id).first()
 
-def create(db: Session, data: UsuarioCreate):
-    nuevo = Usuario(
-        nombre=data.nombre,
-        correo=data.correo,
-        foto_url=data.foto_url,
-        email_verificado=data.email_verificado,
-        estado=data.estado,
-        rolid=data.rolid,
-        fechacreacion=datetime.utcnow()
-    )
+async def get_all(db):
+    result = await db.execute(select(Usuario))
+    return result.scalars().all()
+
+
+async def get_by_id(db, id: int):
+    result = await db.execute(select(Usuario).filter(Usuario.id == id))
+    return result.scalar_one_or_none()
+
+
+async def create(db, data: UsuarioCreate):
+
+    # ✅ Evitar correos duplicados
+    existing = await db.execute(select(Usuario).filter(Usuario.correo == data.correo))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="El correo ya está en uso")
+
+    nuevo = Usuario(**data.dict())
+    nuevo.fechacreacion = datetime.utcnow()
+
     db.add(nuevo)
-    db.commit()
-    db.refresh(nuevo)
+    await db.commit()
+    await db.refresh(nuevo)
     return nuevo
 
-def update(db: Session, id: int, data: UsuarioUpdate):
-    usuario = get_by_id(db, id)
+
+async def update(db, id: int, data: UsuarioUpdate):
+    usuario = await get_by_id(db, id)
     if usuario:
-        for key, value in data.dict(exclude_unset=True).items():
-            setattr(usuario, key, value)
+        for k, v in data.dict(exclude_unset=True).items():
+            setattr(usuario, k, v)
         usuario.fechaactualizacion = datetime.utcnow()
-        db.commit()
-        db.refresh(usuario)
+        await db.commit()
+        await db.refresh(usuario)
     return usuario
 
-def delete(db: Session, id: int):
-    usuario = get_by_id(db, id)
+
+async def delete(db, id: int):
+    usuario = await get_by_id(db, id)
     if usuario:
-        db.delete(usuario)
-        db.commit()
+        await db.delete(usuario)
+        await db.commit()
     return usuario
 
-def actualizar_cod_docente_service(db: Session, usuario_id: int, datos: UsuarioDocenteCodigoUpdate):
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
 
+async def actualizar_cod_docente_service(db, usuario_id: int, datos: UsuarioDocenteCodigoUpdate):
+    usuario = await get_by_id(db, usuario_id)
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    # 🔒 Verificar que el usuario tenga rol docente (ejemplo: rolid = 2)
-    if usuario.rolid != 1:
-        raise HTTPException(status_code=403, detail="Solo los usuarios con rol docente pueden tener un código docente")
+    if usuario.rolid != ROL_DOCENTE:
+        raise HTTPException(status_code=403, detail="Solo docentes pueden tener código docente")
 
-    # Actualizar el código docente si se envía
     if datos.cod_docente:
         usuario.cod_docente = datos.cod_docente
+        usuario.fechaactualizacion = datetime.utcnow()
 
-    db.commit()
-    db.refresh(usuario)
+    await db.commit()
+    await db.refresh(usuario)
     return usuario

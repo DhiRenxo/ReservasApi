@@ -1,26 +1,33 @@
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
-from app.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.database import get_db as get_async_db
 from utils.google_auth import verificar_token_google
-from utils.security import crear_token_acceso  
+from utils.security import crear_token_acceso
 from schemas.token import TokenResponse, GoogleLoginRequest
 from models.usuario import Usuario
+from models.docente import Docente
 from datetime import timedelta
 from config import settings
-from models.docente import Docente
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 @router.post("/google-login", response_model=TokenResponse)
-def login_google(request: GoogleLoginRequest, db: Session = Depends(get_db)):
-    user_data = verificar_token_google(request.google_token)
+async def login_google(request: GoogleLoginRequest, db: AsyncSession = Depends(get_async_db)):
+
+    user_data = await verificar_token_google(request.google_token)
     if not user_data:
         raise HTTPException(status_code=401, detail="Token inválido o dominio no permitido.")
 
-    usuario = db.query(Usuario).filter(Usuario.correo == user_data["correo"]).first()
+    # Buscar usuario
+    result = await db.execute(select(Usuario).where(Usuario.correo == user_data["correo"]))
+    usuario = result.scalars().first()
 
     if not usuario:
-        docente = db.query(Docente).filter(Docente.nombre == user_data["nombre"]).first()
+        # Verificar si es docente
+        result_docente = await db.execute(select(Docente).where(Docente.nombre == user_data["nombre"]))
+        docente = result_docente.scalars().first()
+
         rol_id = 1 if docente else 6
 
         usuario = Usuario(
@@ -32,8 +39,8 @@ def login_google(request: GoogleLoginRequest, db: Session = Depends(get_db)):
             rolid=rol_id
         )
         db.add(usuario)
-        db.commit()
-        db.refresh(usuario)
+        await db.commit()
+        await db.refresh(usuario)
 
     token = crear_token_acceso(
         data={"sub": usuario.correo, "id": usuario.id, "rol": usuario.rolid},

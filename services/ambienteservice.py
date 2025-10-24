@@ -1,74 +1,99 @@
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from models.ambiente import Ambiente
 from models.tipoambiente import TipoAmbiente
 from schemas.ambiente import AmbienteCreate, AmbienteUpdate
 
 
-def get_all(db: Session):
-    return db.query(Ambiente).options(joinedload(Ambiente.tipo_ambiente)).all()
+async def get_all(db: AsyncSession):
+    result = await db.execute(
+        select(Ambiente).options(selectinload(Ambiente.tipo_ambiente))
+    )
+    return result.scalars().all()
 
 
-def get_by_id(db: Session, id: int):
-    return db.query(Ambiente).options(joinedload(Ambiente.tipo_ambiente)).filter(Ambiente.id == id).first()
+async def get_by_id(db: AsyncSession, id: int):
+    result = await db.execute(
+        select(Ambiente)
+        .options(selectinload(Ambiente.tipo_ambiente))
+        .filter(Ambiente.id == id)
+    )
+    return result.scalars().first()
 
 
-def create(db: Session, data: AmbienteCreate):
-
-    existe = db.query(Ambiente).filter(Ambiente.codigo == data.codigo).first()
-    if existe:
+async def create(db: AsyncSession, data: AmbienteCreate):
+    # Validar código único
+    existe = await db.execute(
+        select(Ambiente).filter(Ambiente.codigo == data.codigo)
+    )
+    if existe.scalars().first():
         raise HTTPException(status_code=400, detail="El código ya existe")
 
-
-    tipo = db.query(TipoAmbiente).filter(TipoAmbiente.id == data.tipoid).first()
-    if not tipo:
+    # Validar tipo
+    tipo = await db.execute(
+        select(TipoAmbiente).filter(TipoAmbiente.id == data.tipoid)
+    )
+    if not tipo.scalars().first():
         raise HTTPException(status_code=404, detail="Tipo de ambiente no válido")
 
     nuevo = Ambiente(**data.dict())
     db.add(nuevo)
-    db.commit()
-    db.refresh(nuevo)
+
+    await db.commit()
+    await db.refresh(nuevo)
     return nuevo
 
 
-def update(db: Session, id: int, data: AmbienteUpdate):
-    ambiente = get_by_id(db, id)
+async def update(db: AsyncSession, id: int, data: AmbienteUpdate):
+    ambiente = await get_by_id(db, id)
     if not ambiente:
         raise HTTPException(status_code=404, detail="Ambiente no encontrado")
 
-
+    # Validar código único si cambió
     if data.codigo != ambiente.codigo:
-        existe = db.query(Ambiente).filter(Ambiente.codigo == data.codigo).first()
-        if existe:
+        existe = await db.execute(
+            select(Ambiente).filter(Ambiente.codigo == data.codigo)
+        )
+        if existe.scalars().first():
             raise HTTPException(status_code=400, detail="El código ya existe")
 
-    tipo = db.query(TipoAmbiente).filter(TipoAmbiente.id == data.tipoid).first()
-    if not tipo:
+    # Validar tipo
+    tipo = await db.execute(
+        select(TipoAmbiente).filter(TipoAmbiente.id == data.tipoid)
+    )
+    if not tipo.scalars().first():
         raise HTTPException(status_code=404, detail="Tipo de ambiente no válido")
 
     for key, value in data.dict().items():
         setattr(ambiente, key, value)
 
-    db.commit()
-    db.refresh(ambiente)
+    await db.commit()
+    await db.refresh(ambiente)
     return ambiente
 
 
-def delete(db: Session, id: int):
-    ambiente = get_by_id(db, id)
+async def delete(db: AsyncSession, id: int):
+    ambiente = await get_by_id(db, id)
     if not ambiente:
         raise HTTPException(status_code=404, detail="Ambiente no encontrado")
-    
-    db.delete(ambiente)
-    db.commit()
+
+    await db.delete(ambiente)
+    await db.commit()
     return ambiente
 
 
-def actualizar_estado_ambiente(db: Session, id: int, nuevo_estado: bool):
-    db_ambiente = db.query(Ambiente).filter(Ambiente.id == id).first()
+async def actualizar_estado_ambiente(db: AsyncSession, id: int, nuevo_estado: bool):
+    result = await db.execute(
+        select(Ambiente).filter(Ambiente.id == id)
+    )
+    db_ambiente = result.scalars().first()
+
     if not db_ambiente:
         raise HTTPException(status_code=404, detail="Ambiente no encontrado")
 
     db_ambiente.activo = nuevo_estado
-    db.commit()
+    await db.commit()
+    await db.refresh(db_ambiente)
     return {"estado": db_ambiente.activo}
