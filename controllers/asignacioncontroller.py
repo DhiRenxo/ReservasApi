@@ -5,8 +5,9 @@ import services.asignacionservice as asignacion_service
 import schemas.asignacion as asignacion_schema
 from services.asignacionservice import recalcular_horas_docente
 from typing import List
-from utils.google_auth import get_current_user
+from utils.google_auth import get_current_user, get_correo_usuario
 from models.AsignacionCursoDocente import AsignacionCursoDocente 
+
 
 router = APIRouter(
     prefix="/asignaciones",
