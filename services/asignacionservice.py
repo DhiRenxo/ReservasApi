@@ -2,23 +2,26 @@ from sqlalchemy.future import select
 from fastapi import HTTPException
 from datetime import datetime
 from typing import List, Optional
-
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete, or_
 
 from models.docente import Docente
 from models.cursos import Curso
 from models.asignacion import Asignacion
+from models.carrera import Carrera
 from models.AsignacionCursoDocente import AsignacionCursoDocente
+
 from schemas.asignacion import (
     AsignacionCreate,
     AsignacionUpdate,
     AsignacionUpdateSecciones,
-    AsignacionCursoDocenteCreate
+    AsignacionCursoDocenteCreate,
+    CursosAsignadosDocenteResponse
 )
 
 
 # ------------------------------
-# CRUD Asignacion (async)
+# CRUD Asignación
 # ------------------------------
 async def create_asignacion(db: AsyncSession, asignacion: AsignacionCreate):
     db_asignacion = Asignacion(
@@ -83,7 +86,8 @@ async def delete_asignacion(db: AsyncSession, asignacion_id: int):
     db_asignacion = await get_asignacion(db, asignacion_id)
     if not db_asignacion:
         return None
-    db.delete(db_asignacion)
+
+    await db.delete(db_asignacion)
     await db.commit()
     return db_asignacion
 
@@ -111,8 +115,7 @@ async def get_asignacion_curso_docentes(db: AsyncSession, asignacion_id: int) ->
 
 
 async def update_asignacion_estado(db: AsyncSession, asignacion_id: int, estado: bool):
-    result = await db.execute(select(Asignacion).filter(Asignacion.id == asignacion_id))
-    asignacion = result.scalar_one_or_none()
+    asignacion = await get_asignacion(db, asignacion_id)
     if not asignacion:
         return None
     asignacion.estado = estado
@@ -121,7 +124,7 @@ async def update_asignacion_estado(db: AsyncSession, asignacion_id: int, estado:
     return asignacion
 
 
-async def actualizar_cursos_asignacion(db: AsyncSession, asignacion_id: int, curso_ids: List[int]) -> List[AsignacionCursoDocente]:
+async def actualizar_cursos_asignacion(db: AsyncSession, asignacion_id: int, curso_ids: List[int]):
     asignacion = await get_asignacion(db, asignacion_id)
     if not asignacion:
         return []
@@ -129,36 +132,46 @@ async def actualizar_cursos_asignacion(db: AsyncSession, asignacion_id: int, cur
     cantidad_secciones = asignacion.cantidad_secciones or 1
     curso_ids = list(set(curso_ids))
 
-    # obtener relaciones existentes
+    if curso_ids:
+        delete_stmt = delete(AsignacionCursoDocente).where(
+            AsignacionCursoDocente.asignacion_id == asignacion_id,
+        ).where(
+            or_(
+                AsignacionCursoDocente.curso_id.notin_(curso_ids),
+                AsignacionCursoDocente.seccion > cantidad_secciones
+            )
+        )
+    else:
+        delete_stmt = delete(AsignacionCursoDocente).where(
+            AsignacionCursoDocente.asignacion_id == asignacion_id,
+        )
+
+    await db.execute(delete_stmt)
+    await db.flush()
+
     result = await db.execute(
         select(AsignacionCursoDocente).filter(AsignacionCursoDocente.asignacion_id == asignacion_id)
     )
-    relaciones_existentes = result.scalars().all()
-
-    existentes = {(r.curso_id, r.seccion) for r in relaciones_existentes}
-    secciones_presentes = {r.seccion for r in relaciones_existentes}
-    secciones_a_crear = [s for s in range(1, cantidad_secciones + 1) if s not in secciones_presentes]
+    existentes = {(r.curso_id, r.seccion) for r in result.scalars().all()}
 
     for curso_id in curso_ids:
-        for seccion in secciones_a_crear:
-            clave = (curso_id, seccion)
-            if clave in existentes:
-                continue
-            db_relacion = AsignacionCursoDocente(
-                asignacion_id=asignacion_id,
-                curso_id=curso_id,
-                seccion=seccion,
-                docente_id=None
-            )
-            db.add(db_relacion)
-            existentes.add(clave)
+        for seccion in range(1, cantidad_secciones + 1):
+            if (curso_id, seccion) not in existentes:
+                db.add(
+                    AsignacionCursoDocente(
+                        asignacion_id=asignacion_id,
+                        curso_id=curso_id,
+                        seccion=seccion,
+                        docente_id=None
+                    )
+                )
 
     await db.commit()
 
-    result = await db.execute(
+    result_final = await db.execute(
         select(AsignacionCursoDocente).filter(AsignacionCursoDocente.asignacion_id == asignacion_id)
     )
-    return result.scalars().all()
+    return result_final.scalars().all()
 
 
 async def update_docente_curso_asignacion(db: AsyncSession, asignacion_id: int, curso_id: int, seccion: int, docente_id: int):
@@ -170,7 +183,6 @@ async def update_docente_curso_asignacion(db: AsyncSession, asignacion_id: int, 
         )
     )
     relacion = result.scalar_one_or_none()
-
     if not relacion:
         return None
 
@@ -181,47 +193,35 @@ async def update_docente_curso_asignacion(db: AsyncSession, asignacion_id: int, 
 
 
 async def delete_seccion_asignacion(db: AsyncSession, asignacion_id: int, seccion: int):
-    result = await db.execute(
-        select(AsignacionCursoDocente).filter(
-            AsignacionCursoDocente.asignacion_id == asignacion_id,
-            AsignacionCursoDocente.seccion == seccion
-        )
+    delete_stmt = delete(AsignacionCursoDocente).where(
+        AsignacionCursoDocente.asignacion_id == asignacion_id,
+        AsignacionCursoDocente.seccion == seccion
     )
-    relaciones = result.scalars().all()
 
-    if not relaciones:
-        return None
-
-    for r in relaciones:
-        db.delete(r)
-
+    result = await db.execute(delete_stmt)
     await db.commit()
-    return {"asignacion_id": asignacion_id, "seccion": seccion, "eliminados": len(relaciones)}
+
+    return {"asignacion_id": asignacion_id, "seccion": seccion, "eliminados": result.rowcount}
 
 
 # ------------------------------
 # Horas y bloques
 # ------------------------------
 async def recalcular_horas_docente(db: AsyncSession, docente_id: int):
-    # Obtener docente
     result = await db.execute(select(Docente).filter(Docente.id == docente_id))
     docente = result.scalar_one_or_none()
     if not docente:
         return None
 
-    # obtener relaciones del docente
     result = await db.execute(
         select(AsignacionCursoDocente).filter(AsignacionCursoDocente.docente_id == docente_id)
     )
     relaciones = result.scalars().all()
 
     horas_temporales = 0
-
     for rel in relaciones:
-        # obtener curso y asignacion correspondientes
         curso_res = await db.execute(select(Curso).filter(Curso.id == rel.curso_id))
         curso = curso_res.scalar_one_or_none()
-
         asign_res = await db.execute(select(Asignacion).filter(Asignacion.id == rel.asignacion_id))
         asignacion = asign_res.scalar_one_or_none()
 
@@ -230,7 +230,6 @@ async def recalcular_horas_docente(db: AsyncSession, docente_id: int):
 
         horas_curso = 0
 
-        # Si es bloque: solo suma si está activo
         if getattr(rel, "es_bloque", False) and getattr(rel, "bloque", None) in ["A", "B"]:
             if getattr(rel, "activo", False):
                 horas_curso = getattr(curso, "horas", 0) or 0
@@ -241,7 +240,6 @@ async def recalcular_horas_docente(db: AsyncSession, docente_id: int):
 
         horas_temporales += horas_curso
 
-    # actualizar docente
     horas_reales = (getattr(docente, "horasactual", 0) or 0) - (getattr(docente, "horastemporales", 0) or 0)
     docente.horastemporales = horas_temporales
     docente.horasactual = horas_reales + horas_temporales
@@ -260,13 +258,12 @@ async def activar_bloque(db: AsyncSession, relacion_id: int):
         return None
 
     if getattr(relacion, "es_bloque", False):
-        # desactivar otros bloques del mismo curso/asignacion
         result = await db.execute(
             select(AsignacionCursoDocente).filter(
                 AsignacionCursoDocente.asignacion_id == relacion.asignacion_id,
                 AsignacionCursoDocente.curso_id == relacion.curso_id,
                 AsignacionCursoDocente.es_bloque == True,
-                AsignacionCursoDocente.id != relacion.id
+                AsignacionCursoDocente.id != relacion_id
             )
         )
         otros = result.scalars().all()
@@ -280,9 +277,7 @@ async def activar_bloque(db: AsyncSession, relacion_id: int):
 
     await db.commit()
     await db.refresh(relacion)
-
     return relacion
-
 
 
 async def actualizar_comentario_disponibilidad(db: AsyncSession, relacion_id: int, data):
@@ -302,3 +297,55 @@ async def actualizar_comentario_disponibilidad(db: AsyncSession, relacion_id: in
     await db.commit()
     await db.refresh(relacion)
     return relacion
+
+
+async def obtener_cursos_por_correo(db: AsyncSession, correo: str):
+    result_docente = await db.execute(select(Docente).filter(Docente.correo == correo))
+    docente = result_docente.scalar_one_or_none()
+    if not docente:
+        raise HTTPException(status_code=404, detail="Docente no encontrado")
+
+    result_rel = await db.execute(
+        select(AsignacionCursoDocente)
+        .join(Asignacion)
+        .filter(
+            AsignacionCursoDocente.docente_id == docente.id,
+            Asignacion.estado == True
+        )
+    )
+    relaciones = result_rel.scalars().all()
+
+    response = []
+    for rel in relaciones:
+        curso_res = await db.execute(select(Curso).filter(Curso.id == rel.curso_id))
+        curso = curso_res.scalar_one_or_none()
+        asign_res = await db.execute(select(Asignacion).filter(Asignacion.id == rel.asignacion_id))
+        asign = asign_res.scalar_one_or_none()
+
+        if not curso or not asign:
+            continue
+
+        carrera_res = await db.execute(select(Carrera).filter(Carrera.id == asign.carreraid))
+        carrera = carrera_res.scalar_one_or_none()
+
+        response.append(
+            CursosAsignadosDocenteResponse(
+                docente_id=docente.id,
+                asignacion_id=asign.id,
+                carreraid=asign.carreraid,
+                carrera_nombre=carrera.nombre if carrera else None,
+                plan=asign.plan,
+                ciclo=asign.ciclo,
+                modalidad=asign.modalidad,
+                curso_id=curso.id,
+                curso_nombre=curso.nombre,
+                seccion=rel.seccion,
+                estado=asign.estado,
+                docente_nombre=docente.nombre,
+                es_bloque=rel.es_bloque,
+                bloque=rel.bloque,
+                activo=rel.activo
+            )
+        )
+
+    return response

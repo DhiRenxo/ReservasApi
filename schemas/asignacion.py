@@ -67,6 +67,7 @@ class AsignacionCursoDocenteBase(BaseModel):
     duplica_horas: Optional[bool] = False
     comentario: Optional[str] = None
     disponibilidad: Optional[str] = None
+    activo: bool
 
 
 class AsignacionCursoDocenteCreate(AsignacionCursoDocenteBase):
@@ -90,6 +91,23 @@ class AsignacionCursoDocenteUpdate(BaseModel):
     duplica_horas: Optional[bool] = None
     comentario: Optional[str] = None
     disponibilidad: Optional[str] = None
+    activo: Optional[bool] = None
+
+class CursosAsignadosDocenteResponse(BaseModel):
+    docente_id: int
+    asignacion_id: int
+    carreraid: int
+    carrera_nombre: str | None
+    plan: str
+    ciclo: str
+    modalidad: Optional[str]
+    curso_id: int
+    curso_nombre: str
+    seccion: Optional[int]
+    estado: bool
+    docente_nombre: str
+    es_bloque: Optional[bool] = False
+    bloque: Optional[str] = None
     activo: Optional[bool] = None
 
 

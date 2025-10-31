@@ -234,3 +234,11 @@ async def desactivar_bloque(
     await db.commit()
     await db.refresh(relacion)
     return {"id": relacion.id, "activo": relacion.activo}
+
+@router.get("/docente/{correo}", response_model=List[asignacion_schema.CursosAsignadosDocenteResponse])
+async def obtener_cursos_por_correo(
+    correo: str,
+    db: AsyncSession = Depends(get_async_db),
+    dict = Depends(get_current_user)
+):
+    return await asignacion_service.obtener_cursos_por_correo(db, correo)

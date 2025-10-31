@@ -14,6 +14,23 @@ class DisponibilidadService:
         result = await self.db.execute(select(Docente).filter(Docente.correo == correo))
         return result.scalar_one_or_none()
 
+    def _serialize_horarios(self, horarios: List) -> List[dict]:
+        """
+        Convierte los horarios a un formato JSON serializable.
+        Acepta datetime.time o strings en formato "HH:MM".
+        """
+        import datetime
+        serialized = []
+        for h in horarios:
+            hora_inicio = h.get("hora_inicio")
+            hora_fin = h.get("hora_fin")
+            if isinstance(hora_inicio, datetime.time):
+                hora_inicio = hora_inicio.strftime("%H:%M")
+            if isinstance(hora_fin, datetime.time):
+                hora_fin = hora_fin.strftime("%H:%M")
+            serialized.append({"hora_inicio": hora_inicio, "hora_fin": hora_fin})
+        return serialized
+
     async def create_or_update(self, data: DisponibilidadDocenteCreate, correo_docente: str) -> DisponibilidadDocente:
         docente = await self.get_docente_by_correo(correo_docente)
         if not docente:
@@ -29,7 +46,7 @@ class DisponibilidadService:
         )
         disponibilidad = result.scalar_one_or_none()
 
-        horarios_serializados = [h.dict() for h in data.horarios] if data.horarios else []
+        horarios_serializados = self._serialize_horarios([h.dict() for h in data.horarios]) if data.horarios else []
 
         if disponibilidad:
             disponibilidad.horarios = horarios_serializados
@@ -78,7 +95,7 @@ class DisponibilidadService:
 
         update_data = data.dict(exclude_unset=True)
         if "horarios" in update_data and update_data["horarios"] is not None:
-            update_data["horarios"] = [h.dict() for h in update_data["horarios"]]
+            update_data["horarios"] = self._serialize_horarios([h.dict() for h in update_data["horarios"]])
 
         for key, value in update_data.items():
             setattr(disponibilidad, key, value)

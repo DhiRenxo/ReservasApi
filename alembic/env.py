@@ -44,9 +44,9 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 # Leer DATABASE_URL del .env
-database_url = os.getenv("DATABASE_URL")
+database_url = os.getenv("DATABASE_URL_SYNC")
 if not database_url:
-    raise RuntimeError("❌ DATABASE_URL no está definida en el archivo .env")
+    raise RuntimeError("❌ DATABASE_URL_SYNC no está definida en el archivo .env")
 
 # Setear en la configuración de Alembic
 config.set_main_option("sqlalchemy.url", database_url)

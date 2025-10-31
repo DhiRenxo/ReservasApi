@@ -62,3 +62,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(b
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token expirado o inválido"
         )
+
+def get_correo_usuario(user: dict) -> str:
+    correo = user.get("correo") or user.get("email")
+    if not correo:
+        raise HTTPException(status_code=400, detail="Correo del usuario no disponible")
+    return correo
