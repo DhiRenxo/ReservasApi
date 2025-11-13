@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 
-class DisponibilidadDocente(Base):
+class DisponibilidadDocente(BaseSync):
     __tablename__ = "disponibilidad_docente"
 
     id = Column(Integer, primary_key=True, index=True)

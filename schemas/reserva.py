@@ -27,4 +27,4 @@ class Reserva(ReservaBase):
     tipoevento: TipoEvento
 
     class Config:
-        orm_mode = True
+        from_attributes = True 

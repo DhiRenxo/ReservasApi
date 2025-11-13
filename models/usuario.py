@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from app.database import Base
+from app.database import BaseSync
 
-class Usuario(Base):
+class Usuario(BaseSync):
     __tablename__ = "usuarios"
 
     id = Column(Integer, primary_key=True)

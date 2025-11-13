@@ -46,7 +46,7 @@ class AsignacionResponse(AsignacionBase):
     fecha_modificada: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True  
 
 
 # -----------------------------
@@ -87,11 +87,12 @@ class AsignacionCursoDocenteComentarioUpdate(BaseModel):
 
 class AsignacionCursoDocenteUpdate(BaseModel):
     es_bloque: Optional[bool] = None
-    bloque: Optional[str] = None  
+    bloque: Optional[str] = None
     duplica_horas: Optional[bool] = None
     comentario: Optional[str] = None
     disponibilidad: Optional[str] = None
     activo: Optional[bool] = None
+
 
 class CursosAsignadosDocenteResponse(BaseModel):
     docente_id: int
@@ -116,4 +117,4 @@ class AsignacionCursoDocenteResponse(AsignacionCursoDocenteBase):
     activo: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True 

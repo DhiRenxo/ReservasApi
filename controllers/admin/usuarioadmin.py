@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db
+from app.database import get_async_db as get_db
 from services import usuarioservice
 from schemas.usuario import UsuarioCreate, UsuarioUpdate, UsuarioResponse, UsuarioDocenteCodigoUpdate
 from utils.google_auth import get_current_user

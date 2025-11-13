@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 from models.seccion import Seccion
 
-class HorarioAcademico(Base):
+class HorarioAcademico(BaseSync):
     __tablename__ = "horarios"
 
     id = Column(Integer, primary_key=True)

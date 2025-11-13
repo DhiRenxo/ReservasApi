@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db
+from app.database import get_async_db as get_db
 from services.email_asignacion_service import enviar_notificacion_asignacion
 
 router = APIRouter(

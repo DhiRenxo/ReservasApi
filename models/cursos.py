@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 from models.carrera import Carrera
 
-class Curso(Base):
+class Curso(BaseSync):
     __tablename__ = "cursos"
 
     id = Column(Integer, primary_key=True)

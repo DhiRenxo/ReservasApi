@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from app.database import get_db as get_async_db
+from app.database import get_async_db
 from services import tipoambiente
 from schemas.tiposambiente import TipoAmbienteCreate, TipoAmbienteResponse
 from utils.google_auth import get_current_user
@@ -36,3 +36,15 @@ async def crear_tipo(
     dict = Depends(get_current_user)
 ):
     return await tipoambiente.create(db, tipo)
+
+@router.put("/{id}", response_model=TipoAmbienteResponse)
+async def actualizar_tipo(
+    id: int,
+    tipo: TipoAmbienteCreate,
+    db: AsyncSession = Depends(get_async_db),
+    dict = Depends(get_current_user)
+):
+    actualizado = await tipoambiente.update(db, id, tipo)
+    if not actualizado:
+        raise HTTPException(status_code=404, detail="Tipo de ambiente no encontrado")
+    return actualizado

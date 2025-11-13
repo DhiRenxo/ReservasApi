@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db
+from app.database import get_async_db as get_db
 import services.docenteservice as docente_service
 from schemas.docente import DocenteCreate, DocenteUpdate, DocenteOut
 from typing import List

@@ -1,14 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.database import get_db as get_async_db
+from app.database import get_async_db
 from utils.google_auth import verificar_token_google
 from utils.security import crear_token_acceso
 from schemas.token import TokenResponse, GoogleLoginRequest
 from models.usuario import Usuario
 from models.docente import Docente
 from datetime import timedelta
-from config import settings
+from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -28,7 +28,7 @@ async def login_google(request: GoogleLoginRequest, db: AsyncSession = Depends(g
         result_docente = await db.execute(select(Docente).where(Docente.nombre == user_data["nombre"]))
         docente = result_docente.scalars().first()
 
-        rol_id = 1 if docente else 6
+        rol_id = 1 if docente else 1
 
         usuario = Usuario(
             nombre=user_data["nombre"],

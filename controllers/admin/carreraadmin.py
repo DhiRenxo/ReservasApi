@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db as get_async_db
+from app.database import get_async_db
 import services.carreraservice as service
 from schemas.carrera import CarreraOut, CarreraCreate, CarreraUpdate
 from typing import List

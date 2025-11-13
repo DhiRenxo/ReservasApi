@@ -1,19 +1,19 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 from datetime import datetime
 from models.asignacionseccion import asignacion_seccion
 
 # ------------------------
 # ASIGNACION
 # ------------------------
-class Asignacion(Base):
+class Asignacion(BaseSync):
     __tablename__ = "asignaciones"
 
     id = Column(Integer, primary_key=True, index=True)
     carreraid = Column(Integer)
-    plan = Column(String, nullable=False)
-    ciclo = Column(String, nullable=False)
+    plan = Column(String(10), nullable=False)
+    ciclo = Column(String(10), nullable=False)
     modalidad = Column(String(20))
     cantidad_secciones = Column(Integer)
     seccion_asignada = Column(Boolean, default= False)

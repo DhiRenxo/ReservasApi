@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db as get_async_db
+from app.database import get_async_db
 from schemas.horario import HorarioAcademicoCreate, HorarioAcademico
 from services import horarioservice as horario_service
 from utils.parser import extraer_horarios_de_texto

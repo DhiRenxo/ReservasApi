@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db as get_async_db
+from app.database import get_async_db
 from services import ambienteservice
 from schemas.ambiente import AmbienteCreate, AmbienteResponse, AmbienteUpdate, AmbienteEstado
 from utils.google_auth import get_current_user  

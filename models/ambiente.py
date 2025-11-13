@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 from models.tipoambiente import TipoAmbiente
 
 
-class Ambiente(Base):
+class Ambiente(BaseSync):
     __tablename__ = "ambientes"
 
     id = Column(Integer, primary_key=True)
@@ -15,5 +15,5 @@ class Ambiente(Base):
     ubicacion = Column(String(100))
     activo = Column(Boolean, default=True)
 
-    tipo_ambiente = relationship("TipoAmbiente", back_populates="ambientes")
+    tipo_ambiente = relationship("TipoAmbiente", back_populates="ambientes", lazy="selectin" )
 

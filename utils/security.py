@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from jose import jwt
-from config import settings
+from app.config import settings
 from typing import Optional, Dict, Any
 
 def crear_token_acceso(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:

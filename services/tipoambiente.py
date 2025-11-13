@@ -20,3 +20,18 @@ async def create(db: AsyncSession, tipo: TipoAmbienteCreate):
     await db.commit()
     await db.refresh(nuevo)
     return nuevo
+# Actualizar tipo de ambiente existente
+async def update(db: AsyncSession, id: int, tipo: TipoAmbienteCreate):
+    result = await db.execute(select(TipoAmbiente).filter(TipoAmbiente.id == id))
+    existente = result.scalar_one_or_none()
+
+    if not existente:
+        return None
+
+    existente.nombre = tipo.nombre
+    existente.colorhex = tipo.colorhex
+
+    db.add(existente)
+    await db.commit()
+    await db.refresh(existente)
+    return existente

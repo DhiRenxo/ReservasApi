@@ -1,8 +1,8 @@
 # models/docente.py
 from sqlalchemy import Column, Integer, String, Boolean
-from app.database import Base
+from app.database import BaseSync
 
-class Carrera(Base):
+class Carrera(BaseSync):
     __tablename__ = "carrera"
 
     id=Column(Integer, primary_key=True, index=True)

@@ -1,8 +1,8 @@
-"""Reinicio BD con algoritmo actual
+"""Inicial migration
 
-Revision ID: fbc8e6d5a2a7
+Revision ID: 5de5684db8f4
 Revises: 
-Create Date: 2025-10-23 16:19:43.710970
+Create Date: 2025-11-06 12:53:18.500689
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'fbc8e6d5a2a7'
+revision: str = '5de5684db8f4'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -23,8 +23,8 @@ def upgrade() -> None:
     op.create_table('asignaciones',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('carreraid', sa.Integer(), nullable=True),
-    sa.Column('plan', sa.String(), nullable=False),
-    sa.Column('ciclo', sa.String(), nullable=False),
+    sa.Column('plan', sa.String(length=10), nullable=False),
+    sa.Column('ciclo', sa.String(length=10), nullable=False),
     sa.Column('modalidad', sa.String(length=20), nullable=True),
     sa.Column('cantidad_secciones', sa.Integer(), nullable=True),
     sa.Column('seccion_asignada', sa.Boolean(), nullable=True),
@@ -50,14 +50,14 @@ def upgrade() -> None:
     sa.Column('nombre', sa.String(length=100), nullable=False),
     sa.Column('codigo', sa.String(length=20), nullable=False),
     sa.Column('estado', sa.Boolean(), nullable=True),
-    sa.Column('correo', sa.String(length=50), nullable=True),
+    sa.Column('correo', sa.String(length=50), nullable=False),
     sa.Column('tipocontrato', sa.String(length=50), nullable=False),
     sa.Column('horassemanal', sa.Integer(), nullable=False),
     sa.Column('horasactual', sa.Integer(), nullable=True),
     sa.Column('horastemporales', sa.Integer(), nullable=True),
     sa.Column('horastotales', sa.Integer(), nullable=True),
     sa.Column('horasdejara', sa.Integer(), nullable=True),
-    sa.Column('observaciones', sa.String(), nullable=True),
+    sa.Column('observaciones', sa.String(length=255), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('codigo'),
     sa.UniqueConstraint('nombre')

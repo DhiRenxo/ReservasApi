@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 from datetime import datetime
 
-class Docente(Base):
+class Docente(BaseSync):
     __tablename__ = "docentes"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -17,7 +17,7 @@ class Docente(Base):
     horastemporales = Column(Integer, nullable=True)
     horastotales = Column(Integer, nullable=True)
     horasdejara = Column(Integer, nullable=True)
-    observaciones = Column(String, nullable=True)
+    observaciones = Column(String(255), nullable=True)
 
     asignaciones_curso_docente = relationship(
         "AsignacionCursoDocente",

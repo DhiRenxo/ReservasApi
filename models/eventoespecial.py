@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 
-class EventoEspecial(Base):
+class EventoEspecial(BaseSync):
     __tablename__ = "eventosespeciales"
 
     id = Column(Integer, primary_key=True)

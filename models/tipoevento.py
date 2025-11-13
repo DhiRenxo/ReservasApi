@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String
-from app.database import Base
+from app.database import BaseSync
 
-class TipoEvento(Base):
+class TipoEvento(BaseSync):
     __tablename__ = "tiposevento"
 
     id = Column(Integer, primary_key=True)

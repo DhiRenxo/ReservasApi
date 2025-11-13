@@ -5,8 +5,8 @@ from models.usuario import Usuario
 from schemas.docente import DocenteCreate, DocenteUpdate
 from datetime import datetime
 
-ROL_DOCENTE = 4
-ROL_INVITADO = 6
+ROL_DOCENTE = 7
+ROL_INVITADO = 1
 
 
 async def listar_docentes(db):
@@ -41,7 +41,7 @@ async def crear_docente(db, data: DocenteCreate):
         await db.commit()
         await db.refresh(usuario)
 
-    return jsonable_encoder(db_docente)  
+    return db_docente
 
 
 async def actualizar_docente(db, docente_id: int, data: DocenteUpdate):

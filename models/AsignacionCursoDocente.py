@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 
-class AsignacionCursoDocente(Base):
+class AsignacionCursoDocente(BaseSync):
     __tablename__ = "asignacion_curso_docente"
 
     id = Column(Integer, primary_key=True, index=True)

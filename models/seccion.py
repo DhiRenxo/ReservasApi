@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String, Date, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 from models.carrera import Carrera
 from models.asignacionseccion import asignacion_seccion
 
-class Seccion(Base):
+class Seccion(BaseSync):
     __tablename__ = "seccion"
 
     id = Column(Integer, primary_key=True, index=True)

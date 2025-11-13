@@ -4,7 +4,7 @@ from models.usuario import Usuario
 from schemas.usuario import UsuarioCreate, UsuarioUpdate, UsuarioDocenteCodigoUpdate
 from datetime import datetime
 
-ROL_DOCENTE = 4
+ROL_DOCENTE = 7
 
 
 async def get_all(db):

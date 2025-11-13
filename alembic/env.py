@@ -31,7 +31,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Importar Base y modelos
-from app.database import Base
+from app.database import BaseSync
 
 # Configuración de Alembic
 config = context.config
@@ -41,10 +41,10 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Metadata para autogenerar migraciones
-target_metadata = Base.metadata
+target_metadata = BaseSync.metadata
 
 # Leer DATABASE_URL del .env
-database_url = os.getenv("DATABASE_URL_SYNC")
+database_url = os.getenv("DATABASE_URL_SYNC").replace("%","%%")
 if not database_url:
     raise RuntimeError("❌ DATABASE_URL_SYNC no está definida en el archivo .env")
 

@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum as SqlEnum
 from sqlalchemy.orm import relationship
-from app.database import Base
+from app.database import BaseSync
 from utils.enums import EstadoReserva
 
-class Reserva(Base):
+class Reserva(BaseSync):
     __tablename__ = "reservas"
 
     id = Column(Integer, primary_key=True)

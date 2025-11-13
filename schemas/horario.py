@@ -7,8 +7,8 @@ class HorarioAcademicoBase(BaseModel):
     docenteid: int = Field(..., gt=0)
     seccionid: int = Field(..., gt=0)
     diasemana: str = Field(..., max_length=15, description="Día de la semana (Lunes a Domingo)")
-    horainicio: str = Field(..., regex=r"^\d{2}:\d{2}$", max_length=5, description="Hora de inicio HH:MM")
-    horafin: str = Field(..., regex=r"^\d{2}:\d{2}$", max_length=5, description="Hora de fin HH:MM")
+    horainicio: str = Field(..., pattern=r"^\d{2}:\d{2}$", max_length=5, description="Hora de inicio HH:MM")
+    horafin: str = Field(..., pattern=r"^\d{2}:\d{2}$", max_length=5, description="Hora de fin HH:MM")
 
     @validator("diasemana")
     def validar_diasemana(cls, v):
@@ -27,11 +27,13 @@ class HorarioAcademicoBase(BaseModel):
                 raise ValueError("La hora de fin debe ser posterior a la de inicio")
         return fin
 
+
 class HorarioAcademicoCreate(HorarioAcademicoBase):
     pass
+
 
 class HorarioAcademico(HorarioAcademicoBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
