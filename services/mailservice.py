@@ -4,7 +4,7 @@ from app.config import settings
 
 async def enviar_email(destinatario: str, asunto: str, mensaje: str) -> str:
     try:
-        msg = MIMEText(mensaje, "plain", "utf-8")
+        msg = MIMEText(mensaje, "html", "utf-8")
         msg["Subject"] = asunto
         msg["From"] = settings.MAIL_FROM
         msg["To"] = destinatario
